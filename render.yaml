@@ -22,7 +22,10 @@ services:
     runtime: docker
     dockerfilePath: ./api/Dockerfile
     dockerContext: .
-    dockerCommand: sh -c "node db/migrate.js && RUN_BACKGROUND=true node api/src/server.js"
+    # No dockerCommand: Render treats it as a single program name, so
+    # shell operators (&&) fail with "not found". The Dockerfile CMD
+    # (exec form) runs migrations + the server; RUN_BACKGROUND below
+    # enables the embedded worker/dispatcher.
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
