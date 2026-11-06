@@ -17,9 +17,8 @@ services:
     runtime: docker
     dockerfilePath: ./api/Dockerfile
     dockerContext: .
-    # Run migrations (idempotent) before serving, so deploys never boot
-    # against a stale schema.
-    dockerCommand: sh -c "node db/migrate.js && node api/src/server.js"
+    # No dockerCommand (Render would treat it as one program name).
+    # The Dockerfile CMD runs migrations (idempotent) before serving.
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -63,10 +62,13 @@ services:
     runtime: docker
     dockerfilePath: ./worker/Dockerfile
     dockerContext: .
-    dockerCommand: node worker/src/worker.js --mode=dispatcher
+    # No dockerCommand (single-string parsing breaks argv flags).
+    # Mode comes from this env var instead (worker.js reads WORKER_MODE).
     envVars:
       - key: NODE_ENV
         value: production
+      - key: WORKER_MODE
+        value: dispatcher
       - key: LOG_LEVEL
         value: info
       - key: DATABASE_URL
