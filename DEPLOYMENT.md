@@ -19,6 +19,16 @@ Worker ──HTTPS POST──▶ your users' webhook endpoints (must be public)
 
 ## Part 1 — Backend on Render (3 services, one blueprint)
 
+> **"Payment Information Required" prompt?** That's because Render has **no
+> free tier for background workers** — the paid `render.yaml` blueprint
+> (worker + dispatcher on `starter`) can't be created without a card on
+> file. If you don't want to add a card, use the **free single-service
+> variant** instead: same Blueprint flow, but set **Blueprint Path =
+> `render.free.yaml`** — one free web service that runs API + worker +
+> dispatcher together via `RUN_BACKGROUND=true` (great for testing; sleeps
+> when idle, so deliveries pause until the next request wakes it).
+> Switch to the paid `render.yaml` later for production.
+
 1. Push this repo to GitHub (already done — `render.yaml` is in the root).
 2. Render Dashboard → **New → Blueprint** → select `Aayush3238/EventRelay`.
    Render reads `render.yaml` and creates three services:
