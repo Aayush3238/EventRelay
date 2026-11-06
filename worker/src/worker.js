@@ -2,6 +2,8 @@
 //   node worker.js                  → BullMQ worker + sweeper
 //   node worker.js --mode=dispatcher → outbox dispatcher only
 // Roles are split so you can scale them independently in Compose.
+// Also exports startWorker() so the API process can embed the worker
+// (RUN_BACKGROUND=true) — handy for free-tier single-service deploys.
 const { Worker } = require('bullmq');
 const config = require('./config');
 const logger = require('./logger');
@@ -11,17 +13,7 @@ const { startSweeper } = require('./sweeper');
 const { startDispatcher } = require('./dispatcher');
 const { pool } = require('./db');
 
-const mode = process.argv.includes('--mode=dispatcher') ? 'dispatcher' : 'worker';
-
-async function main() {
-  if (mode === 'dispatcher') {
-    const stop = await startDispatcher();
-    const shutdown = async () => { await stop(); await pool.end(); process.exit(0); };
-    process.on('SIGTERM', shutdown);
-    process.on('SIGINT', shutdown);
-    return;
-  }
-
+function startWorker() {
   const worker = new Worker(
     'deliveries',
     async (job) => {
@@ -39,12 +31,30 @@ async function main() {
   );
 
   worker.on('failed', (job, err) => logger.error({ err, jobId: job?.id }, 'bullmq job failed'));
+  worker.on('error', (err) => logger.error({ err }, 'bullmq worker error'));
   logger.info({ concurrency: config.concurrency }, 'worker started');
 
   const stopSweeper = startSweeper();
-  const shutdown = async () => {
+  return async () => {
     await stopSweeper();
     await worker.close();
+  };
+}
+
+const mode = process.argv.includes('--mode=dispatcher') ? 'dispatcher' : 'worker';
+
+async function main() {
+  if (mode === 'dispatcher') {
+    const stop = await startDispatcher();
+    const shutdown = async () => { await stop(); await pool.end(); process.exit(0); };
+    process.on('SIGTERM', shutdown);
+    process.on('SIGINT', shutdown);
+    return;
+  }
+
+  const stopWorker = startWorker();
+  const shutdown = async () => {
+    await stopWorker();
     await pool.end();
     process.exit(0);
   };
@@ -52,4 +62,8 @@ async function main() {
   process.on('SIGINT', shutdown);
 }
 
-main().catch((err) => { logger.fatal({ err }, 'worker failed to start'); process.exit(1); });
+if (require.main === module) {
+  main().catch((err) => { logger.fatal({ err }, 'worker failed to start'); process.exit(1); });
+}
+
+module.exports = { startWorker };
