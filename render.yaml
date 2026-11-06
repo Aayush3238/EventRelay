@@ -1,0 +1,66 @@
+# Render Blueprint — EventRelay backend (API + worker + dispatcher).
+# Usage: Render Dashboard → New → Blueprint → select this repo → it creates
+# the 3 services below. Then paste the secret values in the dashboard
+# (keys marked `sync: false` are NOT taken from this file).
+# NOTE: for the free plan, web services spin down after inactivity
+# (cold starts). Background workers need a paid instance to run 24/7.
+services:
+  - type: web
+    name: eventrelay-api
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    # Run migrations (idempotent) before serving, so deploys never boot
+    # against a stale schema.
+    dockerCommand: sh -c "node db/migrate.js && node api/src/server.js"
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: LOG_LEVEL
+        value: info
+      - key: CLIENT_URL
+        sync: false  # e.g. https://your-app.vercel.app — set AFTER Vercel deploy
+      - key: DATABASE_URL
+        sync: false  # same value as in your local .env
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false  # generate: node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+      - key: ENCRYPTION_KEY
+        sync: false  # 32 bytes base64: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+  - type: background worker
+    name: eventrelay-worker
+    runtime: docker
+    dockerfilePath: ./worker/Dockerfile
+    dockerContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false  # MUST match the API service exactly
+
+  - type: background worker
+    name: eventrelay-dispatcher
+    runtime: docker
+    dockerfilePath: ./worker/Dockerfile
+    dockerContext: .
+    dockerCommand: node worker/src/worker.js --mode=dispatcher
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
