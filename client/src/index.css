@@ -1,3 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
-body { @apply bg-slate-50 text-slate-900 antialiased; }
+/* EventRelay ops console theme (from Stitch design system):
+   Inter for UI, JetBrains Mono for telemetry/IDs, hairline borders,
+   semantic status tokens, indigo primary on slate. */
+@theme {
+  --font-sans: "Inter", ui-sans-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  font-family: var(--font-sans);
+}
+
+.font-mono, code, kbd {
+  font-family: var(--font-mono);
+}
+
+/* Tabular figures for numbers so metric columns don't jitter on re-render */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
