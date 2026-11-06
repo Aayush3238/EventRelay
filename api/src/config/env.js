@@ -3,7 +3,7 @@
 const path = require('node:path');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '..', '.env') });
 
-const leaseMs = Number(process.env.DELIVERY_LEASE_MS || 60000);
+const leaseMs = Number(process.env.DELIVERY_LEASE_MS || 100000);
 const maxTimeout = Number(process.env.MAX_ENDPOINT_TIMEOUT_MS || 30000);
 
 function assertLeaseSafety() {
