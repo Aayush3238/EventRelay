@@ -11,4 +11,8 @@ COPY api api
 COPY worker worker
 COPY db db
 EXPOSE 4000
-CMD ["node", "api/src/server.js"]
+# Exec-form CMD (separate args) — Render passes dockerCommand as ONE string,
+# so compound shell commands must live here, not in render.yaml.
+# Migrations are idempotent; RUN_BACKGROUND comes from the environment,
+# so the paid 3-service setup (separate worker) just leaves it unset.
+CMD ["sh", "-c", "node db/migrate.js && node api/src/server.js"]
