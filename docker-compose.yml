@@ -1,0 +1,84 @@
+# EventRelay — local + prod-like stack.
+# Postgres is the source of truth; Redis is only a queue/scheduling aid.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: eventrelay
+      POSTGRES_PASSWORD: eventrelay
+      POSTGRES_DB: eventrelay
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventrelay"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    command: ["node", "api/src/server.js"]
+    environment:
+      DATABASE_URL: postgres://eventrelay:eventrelay@postgres:5432/eventrelay
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+      PORT: "4000"
+      CLIENT_URL: http://localhost:5173
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY}
+    ports: ["4000:4000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    command: ["node", "worker/src/worker.js"]
+    environment:
+      DATABASE_URL: postgres://eventrelay:eventrelay@postgres:5432/eventrelay
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?set ENCRYPTION_KEY}
+      WORKER_CONCURRENCY: "10"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    # scale with: docker compose up --scale worker=3
+
+  dispatcher:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    command: ["node", "worker/src/worker.js", "--mode=dispatcher"]
+    environment:
+      DATABASE_URL: postgres://eventrelay:eventrelay@postgres:5432/eventrelay
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    ports: ["5173:80"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
+  redisdata:
