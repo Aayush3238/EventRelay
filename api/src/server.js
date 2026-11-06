@@ -10,6 +10,13 @@ const server = app.listen(env.port, () => {
   logger.info({ port: env.port }, 'eventrelay-api listening');
 });
 
+// Free-tier single-process mode: also run worker + dispatcher in here.
+// Failures here must never take the API down, hence the catch.
+if (process.env.RUN_BACKGROUND === 'true') {
+  const { startBackground } = require('./background');
+  startBackground().catch((err) => logger.error({ err }, 'embedded background mode failed to start'));
+}
+
 async function shutdown(signal) {
   logger.info({ signal }, 'shutting down');
   server.close(async () => {
