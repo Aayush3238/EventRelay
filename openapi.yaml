@@ -1,0 +1,93 @@
+openapi: 3.1.0
+info:
+  title: EventRelay API
+  version: 0.1.0
+  description: |
+    Reliable webhook delivery (at-least-once). Ingest with an API key
+    (X-API-Key header); dashboard APIs use a JWT bearer token.
+    Deliveries are signed: X-EventRelay-Signature: t=<unix>,v1=<HMAC-SHA256(secret, t + "." + rawBody)>
+servers:
+  - url: http://localhost:4000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses: { '200': { description: ok } }
+  /auth/register:
+    post:
+      summary: Register a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+      responses:
+        '201': { description: Created (returns JWT) }
+        '409': { description: Email already registered }
+        '422': { description: Validation error }
+  /auth/login:
+    post:
+      summary: Login (returns JWT)
+      responses: { '200': { description: ok }, '401': { description: bad credentials } }
+  /api-keys:
+    get: { summary: List API keys (no raw material), responses: { '200': { description: ok } } }
+    post: { summary: Create API key (raw key returned once), responses: { '201': { description: created } } }
+  /api-keys/{id}:
+    delete: { summary: Revoke API key, responses: { '200': { description: revoked } } }
+  /endpoints:
+    get: { summary: List endpoints (no secrets), responses: { '200': { description: ok } } }
+    post: { summary: Create endpoint (signing secret returned once), responses: { '201': { description: created }, '422': { description: SSRF/validation } } }
+  /endpoints/{id}:
+    get: { summary: Get endpoint, responses: { '200': { description: ok } } }
+    put: { summary: Update endpoint + subscriptions, responses: { '200': { description: ok } } }
+    delete: { summary: Soft-delete endpoint, responses: { '200': { description: deleted } } }
+  /endpoints/{id}/rotate-secret:
+    post: { summary: Rotate signing secret (returned once), responses: { '200': { description: ok } } }
+  /v1/events:
+    post:
+      summary: Ingest an event (API key auth, single-transaction fan-out)
+      parameters:
+        - name: X-API-Key
+          in: header
+          required: true
+          schema: { type: string }
+        - name: Idempotency-Key
+          in: header
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, data]
+              properties:
+                type: { type: string, example: order.created }
+                data: { type: object }
+      responses:
+        '202': { description: Accepted (new event) }
+        '200': { description: Already existed (deduplicated) }
+        '413': { description: Payload too large }
+        '422': { description: Validation error }
+  /events:
+    get: { summary: List events (dashboard), responses: { '200': { description: ok } } }
+  /events/{id}:
+    get: { summary: Event detail + deliveries, responses: { '200': { description: ok } } }
+  /deliveries:
+    get: { summary: List deliveries (filter: status, endpointId), responses: { '200': { description: ok } } }
+  /deliveries/{id}:
+    get: { summary: Delivery detail + attempt history, responses: { '200': { description: ok } } }
+  /deliveries/{id}/replay:
+    post:
+      summary: Replay a FAILED delivery (v1: failed-only)
+      responses:
+        '202': { description: Replay queued }
+        '409': { description: Delivery is not in failed state }
+  /stats/overview:
+    get: { summary: Dashboard statistics, responses: { '200': { description: ok } } }
