@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+dist/
+coverage/
+*.log
+# private build / dev notes — never commit these
+build-log.private.md
+*-notes.private.md
+.private.md
