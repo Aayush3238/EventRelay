@@ -1,0 +1,24 @@
+{
+  "name": "eventrelay",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EventRelay — reliable webhook delivery infrastructure (at-least-once)",
+  "engines": { "node": ">=24 <25" },
+  "workspaces": ["api", "worker", "client", "packages/shared"],
+  "dependencies": { "bcryptjs": "^3.0.0", "dotenv": "^17.0.0", "pg": "^8.13.0" },
+  "scripts": {
+    "start:api": "npm run start --workspace=api",
+    "start:worker": "npm run start --workspace=worker",
+    "start:dispatcher": "npm run start:dispatcher --workspace=worker",
+    "dev:api": "npm run dev --workspace=api",
+    "dev:worker": "npm run dev --workspace=worker",
+    "dev:client": "npm run dev --workspace=client",
+    "build:client": "npm run build --workspace=client",
+    "db:migrate": "node db/migrate.js",
+    "db:seed": "node db/seed.js",
+    "recovery:queue": "node scripts/recover-queue.js",
+    "dev:receiver": "node scripts/dev-receiver.js",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "node --check api/src/app.js && node --check worker/src/worker.js && echo ok"
+  }
+}
