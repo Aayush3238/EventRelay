@@ -17,36 +17,35 @@ Worker ──HTTPS POST──▶ your users' webhook endpoints (must be public)
 
 ---
 
-## Part 1 — Backend on Render (3 services, one blueprint)
+## Part 1 — Backend on Render (free single service, one blueprint)
 
-> **"Payment Information Required" prompt?** That's because Render has **no
-> free tier for background workers** — the paid `render.yaml` blueprint
-> (worker + dispatcher on `starter`) can't be created without a card on
-> file. If you don't want to add a card, use the **free single-service
-> variant** instead: same Blueprint flow, but set **Blueprint Path =
-> `render.free.yaml`** — one free web service that runs API + worker +
-> dispatcher together via `RUN_BACKGROUND=true` (great for testing; sleeps
-> when idle, so deliveries pause until the next request wakes it).
-> Switch to the paid `render.yaml` later for production.
+> **"Payment Information Required" prompt?** Render auto-reads the default
+> `render.yaml` the moment you connect the repo. The **default
+> `render.yaml` is now the FREE single-service blueprint** — no paid
+> services, so no payment prompt. (The paid 3-service production blueprint
+> lives in `render.paid.yaml`; selecting it as Blueprint Path is what
+> triggers the payment prompt, because Render has no free tier for
+> background workers.) To go paid later: New → Blueprint → Blueprint
+> Path = `render.paid.yaml` and add a card.
 
 1. Push this repo to GitHub (already done — `render.yaml` is in the root).
 2. Render Dashboard → **New → Blueprint** → select `Aayush3238/EventRelay`.
-   Render reads `render.yaml` and creates three services:
-   - `eventrelay-api` (web service, Docker)
-   - `eventrelay-worker` (background worker, Docker)
-   - `eventrelay-dispatcher` (background worker, Docker, `--mode=dispatcher`)
-3. In each service → **Environment**, paste the secret values
+   Leave **Blueprint Path empty** (defaults to `render.yaml`) and you get
+   one service:
+   - `eventrelay` (web service, Docker, free) — runs API + BullMQ worker +
+     sweeper + outbox dispatcher together via `RUN_BACKGROUND=true`.
+3. In the service → **Environment**, paste the secret values
    (`sync: false` keys in `render.yaml` are placeholders):
    - `DATABASE_URL`, `REDIS_URL` — copy from your local `.env`
+     (for Upstash use `rediss://...`, **not** the `redis-cli --tls -u ...`
+     console command)
    - `JWT_SECRET`, `ENCRYPTION_KEY` — copy from your local `.env`
-     (⚠️ `ENCRYPTION_KEY` must be **identical** on API and worker, or signing
-     secrets become undecryptable. Use fresh production values and keep them
-     backed up.)
+     (use fresh production values and keep them backed up)
    - `CLIENT_URL` — leave for now; you fill it in step 2 below.
-4. Click **Deploy**. The API service runs `node db/migrate.js` before
-   starting, so the schema is created automatically on first deploy.
-5. Note the API URL, e.g. `https://eventrelay-api.onrender.com`.
-   Verify: `GET https://eventrelay-api.onrender.com/health` → `{"status":"ok",...}`
+4. Click **Deploy**. The service runs `node db/migrate.js` before starting,
+   so the schema is created automatically on first deploy.
+5. Note the API URL, e.g. `https://eventrelay.onrender.com`.
+   Verify: `GET https://eventrelay.onrender.com/health` → `{"status":"ok",...}`
 
 ## Part 2 — Frontend on Vercel
 
@@ -55,7 +54,7 @@ Worker ──HTTPS POST──▶ your users' webhook endpoints (must be public)
 3. Framework preset: **Vite** (auto-detected). Build command
    `npm run build`, output `dist` (defaults are fine).
 4. **Environment Variables:** add
-   - `VITE_API_URL` = your Render API URL (e.g. `https://eventrelay-api.onrender.com`)
+   - `VITE_API_URL` = your Render API URL (e.g. `https://eventrelay.onrender.com`)
      — no trailing slash. The dev proxy in `vite.config.js` does NOT apply
      in production; this variable is how the built app finds the API.
 5. Deploy. `client/vercel.json` handles SPA routing (refresh on
@@ -64,7 +63,7 @@ Worker ──HTTPS POST──▶ your users' webhook endpoints (must be public)
 
 ## Part 3 — Connect the two
 
-1. Render → `eventrelay-api` → Environment → set
+1. Render → `eventrelay` → Environment → set
    `CLIENT_URL=https://<your-vercel-url>` (no trailing slash).
 2. **Manual Deploy → Redeploy** the API service (CORS change needs a restart).
 3. Open the Vercel app and log in — the browser now calls the Render API
@@ -80,7 +79,7 @@ Worker ──HTTPS POST──▶ your users' webhook endpoints (must be public)
    Copy the **signing secret** (shown once).
 3. Ingest an event:
    ```bash
-   curl -X POST https://eventrelay-api.onrender.com/v1/events \
+   curl -X POST https://eventrelay.onrender.com/v1/events \
      -H "X-API-Key: er_live_...your-key..." \
      -H "Idempotency-Key: smoke-1" \
      -H "Content-Type: application/json" \
@@ -131,9 +130,9 @@ sensible — override only if you know why.
 |---|---|---|
 | Dashboard loads, login fails with CORS error | `CLIENT_URL` wrong/missing | Set it to the exact Vercel URL, redeploy API |
 | API `/health` 502/503 on Render | Service still building, or free-tier sleeping | Wait/retry; check Render logs |
-| Events ingested but never delivered | Dispatcher not running | Check `eventrelay-dispatcher` service is live; check Redis URL |
-| Deliveries stuck `processing` | Worker crashed / lease expired, sweeper should recover in ~15s | Check worker logs; verify `ENCRYPTION_KEY` matches API |
-| `signing_secret_decrypt_failed` in attempt history | `ENCRYPTION_KEY` differs between API and worker | Set the same value in both services, redeploy both |
+| Events ingested but never delivered | Dispatcher/worker not running (or service asleep) | Check service logs for `dispatcher started` / `worker started`; check Redis URL; wake the service |
+| Deliveries stuck `processing` | Worker crashed / lease expired, sweeper should recover in ~15s | Check service logs; in free mode the sweeper runs in the same process |
+| `signing_secret_decrypt_failed` in attempt history | `ENCRYPTION_KEY` wrong/changed after endpoints were created | Set the original `ENCRYPTION_KEY`; secrets encrypted with an old key can't be decrypted with a new one |
 | Endpoint creation rejected (422 SSRF) | URL is http in prod, or resolves to a private IP | Use a public HTTPS URL |
 | `DELIVERY_LEASE_MS too small` on boot | Lease < 3× max timeout + margin | Raise `DELIVERY_LEASE_MS` (≥ 100000) |
 
