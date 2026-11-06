@@ -1,71 +1,45 @@
-# Render Blueprint — EventRelay backend (API + worker + dispatcher).
-# Usage: Render Dashboard → New → Blueprint → select this repo → it creates
-# the 3 services below. Then paste the secret values in the dashboard
-# (keys marked `sync: false` are NOT taken from this file).
-# NOTE: the API runs on the free plan (spins down after inactivity =
-# cold starts). Render has NO free tier for background workers, so
-# worker + dispatcher are pinned to `starter` (~$7/mo each) — a
-# worker that sleeps would leave deliveries stuck in `processing`.
+# Render Blueprint — FREE single-service variant (testing only).
+# This is the DEFAULT render.yaml on purpose: Render auto-reads it the
+# moment you connect the repo, and since it contains only a free web
+# service, no payment prompt appears. Render has no free tier for
+# background workers, so this runs the API, BullMQ worker, sweeper and
+# outbox dispatcher inside ONE free web service via RUN_BACKGROUND=true.
+#
+# Trade-offs vs render.paid.yaml (the paid, recommended production setup):
+# - Free web services sleep after ~15 min idle → deliveries pause until
+#   the next API request wakes the service (cold start ~30-50s).
+# - A restart kills in-flight deliveries; the lease + sweeper recover
+#   them, so nothing is lost, but expect delays.
+# - API and worker share one process/CPU — fine for testing, not scale.
+#
+# Usage: Render → New → Blueprint → select this repo → Deploy.
+# (For the paid 3-service production setup, use Blueprint Path:
+# render.paid.yaml instead — that one triggers the payment prompt.)
 services:
   - type: web
-    name: eventrelay-api
+    name: eventrelay
     plan: free
     runtime: docker
     dockerfilePath: ./api/Dockerfile
     dockerContext: .
-    # Run migrations (idempotent) before serving, so deploys never boot
-    # against a stale schema.
-    dockerCommand: sh -c "node db/migrate.js && node api/src/server.js"
+    dockerCommand: sh -c "node db/migrate.js && RUN_BACKGROUND=true node api/src/server.js"
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 4000
+      - key: RUN_BACKGROUND
+        value: "true"
       - key: LOG_LEVEL
         value: info
       - key: CLIENT_URL
-        sync: false  # e.g. https://your-app.vercel.app — set AFTER Vercel deploy
+        sync: false  # your Vercel URL, set after frontend deploy
       - key: DATABASE_URL
-        sync: false  # same value as in your local .env
+        sync: false
       - key: REDIS_URL
         sync: false
       - key: JWT_SECRET
-        sync: false  # generate: node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
-      - key: ENCRYPTION_KEY
-        sync: false  # 32 bytes base64: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-
-  - type: worker
-    name: eventrelay-worker
-    plan: starter
-    runtime: docker
-    dockerfilePath: ./worker/Dockerfile
-    dockerContext: .
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: LOG_LEVEL
-        value: info
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
         sync: false
       - key: ENCRYPTION_KEY
-        sync: false  # MUST match the API service exactly
-
-  - type: worker
-    name: eventrelay-dispatcher
-    plan: starter
-    runtime: docker
-    dockerfilePath: ./worker/Dockerfile
-    dockerContext: .
-    dockerCommand: node worker/src/worker.js --mode=dispatcher
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: LOG_LEVEL
-        value: info
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
+        sync: false  # same process signs + verifies, so just needs to be set
