@@ -8,7 +8,8 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 async function main() {
   const connectionString = process.env.DATABASE_URL || 'postgres://eventrelay:eventrelay@localhost:5432/eventrelay';
-  const client = new Client({ connectionString });
+  const ssl = /sslmode=require/.test(connectionString) ? { rejectUnauthorized: false } : false;
+  const client = new Client({ connectionString, ssl });
   await client.connect();
   try {
     await client.query(`
