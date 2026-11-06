@@ -41,7 +41,11 @@ function startWorker() {
   };
 }
 
-const mode = process.argv.includes('--mode=dispatcher') ? 'dispatcher' : 'worker';
+// Mode via argv flag OR env var — Render can't pass argv flags reliably
+// through dockerCommand, so WORKER_MODE=dispatcher is the deploy-friendly way.
+const mode = (process.argv.includes('--mode=dispatcher') || process.env.WORKER_MODE === 'dispatcher')
+  ? 'dispatcher'
+  : 'worker';
 
 async function main() {
   if (mode === 'dispatcher') {
