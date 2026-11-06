@@ -2,11 +2,14 @@
 # Usage: Render Dashboard → New → Blueprint → select this repo → it creates
 # the 3 services below. Then paste the secret values in the dashboard
 # (keys marked `sync: false` are NOT taken from this file).
-# NOTE: for the free plan, web services spin down after inactivity
-# (cold starts). Background workers need a paid instance to run 24/7.
+# NOTE: the API runs on the free plan (spins down after inactivity =
+# cold starts). Render has NO free tier for background workers, so
+# worker + dispatcher are pinned to `starter` (~$7/mo each) — a
+# worker that sleeps would leave deliveries stuck in `processing`.
 services:
   - type: web
     name: eventrelay-api
+    plan: free
     runtime: docker
     dockerfilePath: ./api/Dockerfile
     dockerContext: .
@@ -32,8 +35,9 @@ services:
       - key: ENCRYPTION_KEY
         sync: false  # 32 bytes base64: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
-  - type: background worker
+  - type: worker
     name: eventrelay-worker
+    plan: starter
     runtime: docker
     dockerfilePath: ./worker/Dockerfile
     dockerContext: .
@@ -49,8 +53,9 @@ services:
       - key: ENCRYPTION_KEY
         sync: false  # MUST match the API service exactly
 
-  - type: background worker
+  - type: worker
     name: eventrelay-dispatcher
+    plan: starter
     runtime: docker
     dockerfilePath: ./worker/Dockerfile
     dockerContext: .
