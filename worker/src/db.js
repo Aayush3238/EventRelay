@@ -1,7 +1,10 @@
 const { Pool } = require('pg');
 const config = require('./config');
 
-const pool = new Pool({ connectionString: config.databaseUrl, max: 20 });
+// Neon/Upstash-style URLs carry sslmode=require — pg needs an explicit
+// ssl option or those connections fail with a confusing error.
+const ssl = /sslmode=require/.test(config.databaseUrl) ? { rejectUnauthorized: false } : false;
+const pool = new Pool({ connectionString: config.databaseUrl, max: 20, ssl });
 
 async function withTransaction(fn) {
   const client = await pool.connect();
