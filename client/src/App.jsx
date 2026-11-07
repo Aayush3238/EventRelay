@@ -29,14 +29,14 @@ function Shell({ children }) {
   const logout = () => { localStorage.removeItem('eventrelay_token'); nav('/register'); };
   const [title, subtitle] = PAGE_TITLES[pathname] || PAGE_TITLES['/'];
   const navCls = ({ isActive }) => `flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
-    isActive ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+    isActive ? 'bg-emerald-700 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
   }`;
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Dark ops sidebar (Stitch design system: slate-900 rail) */}
       <aside className="fixed inset-y-0 left-0 flex w-60 flex-col bg-slate-900 text-slate-100">
         <div className="flex items-center gap-2.5 border-b border-slate-800 px-5 py-5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-700">
             <Webhook className="h-4.5 w-4.5 text-white" />
           </span>
           <div>
@@ -102,7 +102,7 @@ function Badge({ status }) {
   );
 }
 
-const inputCls = 'h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500';
+const inputCls = 'h-9 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600';
 const cardCls = 'rounded-lg border border-slate-200 bg-white';
 
 function CopyBtn({ value }) {
@@ -150,7 +150,7 @@ function AuthLayout({ title, subtitle, children }) {
     <div className="flex min-h-screen">
       <aside className="hidden w-[45%] flex-col justify-between bg-slate-900 p-10 text-slate-100 lg:flex">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600"><Webhook className="h-4.5 w-4.5 text-white" /></span>
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-700"><Webhook className="h-4.5 w-4.5 text-white" /></span>
           <span className="text-lg font-semibold tracking-tight">EventRelay</span>
         </div>
         <div>
@@ -164,7 +164,7 @@ function AuthLayout({ title, subtitle, children }) {
           <div className="mt-8 flex items-center gap-3 font-mono text-[11px] text-slate-400">
             <span className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-slate-200">Producer</span>
             <ArrowRight className="h-3.5 w-3.5" />
-            <span className="rounded border border-indigo-500/40 bg-indigo-600/20 px-2 py-1 text-indigo-200">EventRelay</span>
+            <span className="rounded border border-emerald-600/40 bg-emerald-700/20 px-2 py-1 text-emerald-200">EventRelay</span>
             <ArrowRight className="h-3.5 w-3.5" />
             <span className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-slate-200">Your endpoints</span>
           </div>
@@ -214,11 +214,11 @@ function Login() {
             value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         </div>
         {err && <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</p>}
-        <button className="h-10 w-full rounded-md bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60" disabled={login.isPending}>
+        <button className="h-10 w-full rounded-md bg-emerald-700 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60" disabled={login.isPending}>
           {login.isPending ? 'Signing in…' : 'Sign in'}
         </button>
         <p className="text-center text-sm text-slate-500">
-          No account yet? <Link className="font-medium text-indigo-600 hover:underline" to="/register">Sign up</Link>
+          No account yet? <Link className="font-medium text-emerald-700 hover:underline" to="/register">Sign up</Link>
         </p>
       </form>
     </AuthLayout>
@@ -253,11 +253,11 @@ function Register() {
             value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         </div>
         {err && <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{err}</p>}
-        <button className="h-10 w-full rounded-md bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60" disabled={register.isPending}>
+        <button className="h-10 w-full rounded-md bg-emerald-700 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60" disabled={register.isPending}>
           {register.isPending ? 'Creating account…' : 'Sign up'}
         </button>
         <p className="text-center text-sm text-slate-500">
-          Already have an account? <Link className="font-medium text-indigo-600 hover:underline" to="/login">Sign in</Link>
+          Already have an account? <Link className="font-medium text-emerald-700 hover:underline" to="/login">Sign in</Link>
         </p>
       </form>
     </AuthLayout>
@@ -299,12 +299,12 @@ function Landing() {
   ];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-[#FAFAF7] text-slate-900">
       {/* ── Nav ── */}
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-8 px-6 py-3.5">
           <Link to="/" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-indigo-600"><Webhook className="h-4.5 w-4.5 text-white" /></span>
+            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-700"><Webhook className="h-4.5 w-4.5 text-white" /></span>
             <span className="text-[15px] font-semibold tracking-tight">EventRelay</span>
           </Link>
           <nav className="hidden items-center gap-6 text-[13px] font-medium text-slate-600 md:flex">
@@ -315,17 +315,17 @@ function Landing() {
           </nav>
           <div className="ml-auto flex items-center gap-2">
             <Link to="/login" className="rounded-md px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-100">Sign in</Link>
-            <Link to="/register" className="rounded-md bg-indigo-600 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-indigo-700">Get started</Link>
+            <Link to="/register" className="rounded-md bg-emerald-700 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-emerald-800">Get started</Link>
           </div>
         </div>
       </header>
 
       {/* ── Hero ── */}
-      <section className="border-b border-slate-200 bg-slate-50">
+      <section className="border-b border-stone-200 bg-stone-50">
         <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:py-28">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-indigo-700">
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600" /> At-least-once webhook delivery
+            <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-emerald-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-700" /> At-least-once webhook delivery
             </p>
             <h1 className="mt-5 text-5xl font-semibold leading-[1.05] tracking-tight">
               Webhooks that arrive.<br />Every time.
@@ -336,7 +336,7 @@ function Landing() {
               recording every attempt so you can prove what happened.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className="flex items-center gap-2 rounded-md bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700">
+              <Link to="/register" className="flex items-center gap-2 rounded-md bg-emerald-700 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
                 Create free account <ArrowRight className="h-4 w-4" />
               </Link>
               <a href="#how" className="rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 hover:border-slate-400">
@@ -382,7 +382,7 @@ function Landing() {
 
       {/* ── Problem ── */}
       <section id="problem" className="mx-auto max-w-6xl scroll-mt-20 px-6 py-20">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-indigo-600">The problem</p>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">The problem</p>
         <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight">Webhooks fail in boring ways. <span className="text-slate-500">And boring failures lose data.</span></h2>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-600">
           Direct HTTP POSTs from your app to other services break the moment anything hiccups —
@@ -400,22 +400,22 @@ function Landing() {
       </section>
 
       {/* ── How it works ── */}
-      <section id="how" className="scroll-mt-20 border-y border-slate-200 bg-slate-900 py-20 text-slate-100">
+      <section id="how" className="scroll-mt-20 border-y border-emerald-900 bg-emerald-950 py-20 text-slate-100">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-indigo-400">How it works</p>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-amber-400">How it works</p>
           <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight">Four steps. Zero silent data loss.</h2>
           <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {steps.map((s, i) => (
-              <article key={s.n} className="relative rounded-lg border border-slate-800 bg-slate-800/40 p-5">
-                <p className="font-mono text-[11px] text-indigo-400">{s.n}</p>
+              <article key={s.n} className="relative rounded-lg border border-emerald-800 bg-emerald-900/30 p-5">
+                <p className="font-mono text-[11px] text-amber-400">{s.n}</p>
                 <h3 className="mt-2 text-[15px] font-semibold">{s.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-400">{s.text}</p>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-emerald-100/70">{s.text}</p>
                 {i < steps.length - 1 && <ChevronRight className="absolute -right-3 top-1/2 z-10 hidden h-5 w-5 -translate-y-1/2 text-slate-600 xl:block" />}
               </article>
             ))}
           </div>
           <p className="mt-8 flex flex-wrap items-center gap-2 text-sm text-slate-400">
-            <Lock className="h-4 w-4 text-indigo-400" />
+            <Lock className="h-4 w-4 text-amber-400" />
             Every delivery is HMAC-SHA256 signed. Postgres is the source of truth — Redis is only a to-do list.
             Duplicates are possible by design (at-least-once); receivers dedupe on the delivery ID.
           </p>
@@ -424,7 +424,7 @@ function Landing() {
 
       {/* ── Reliability ── */}
       <section id="reliability" className="mx-auto max-w-6xl scroll-mt-20 px-6 py-20">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-indigo-600">Reliability</p>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">Reliability</p>
         <h2 className="mt-2 text-3xl font-semibold tracking-tight">Direct POST vs EventRelay</h2>
         <div className="mt-8 overflow-hidden rounded-lg border border-slate-200">
           <table className="w-full text-sm">
@@ -454,7 +454,7 @@ function Landing() {
             <div className="mt-4 flex flex-wrap items-center gap-2">
               {['Attempt 1 · now', '≈5s', '≈10s', '≈20s', '≈40s', '≈80s'].map((s, i) => (
                 <span key={s} className="flex items-center gap-2">
-                  <span className={`rounded border px-2.5 py-1 font-mono text-[11px] ${i === 0 ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>{s}</span>
+                  <span className={`rounded border px-2.5 py-1 font-mono text-[11px] ${i === 0 ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>{s}</span>
                   {i < 5 && <ArrowRight className="h-3.5 w-3.5 text-slate-400" />}
                 </span>
               ))}
@@ -474,21 +474,21 @@ function Landing() {
       </section>
 
       {/* ── Developers ── */}
-      <section id="developers" className="scroll-mt-20 border-y border-slate-200 bg-slate-50 py-20">
+      <section id="developers" className="scroll-mt-20 border-y border-stone-200 bg-stone-50 py-20">
         <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-2">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-widest text-indigo-600">Developers</p>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">Developers</p>
             <h2 className="mt-2 text-3xl font-semibold tracking-tight">Two integrations. Ten minutes.</h2>
             <p className="mt-3 text-[15px] leading-relaxed text-slate-600">
               Send events with your API key, and verify signed webhooks on the receiving side.
               No SDK required — plain HTTPS in, plain HTTPS out.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-slate-600">
-              <li className="flex gap-2"><Braces className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />Idempotency-Key header makes producer retries safe by default.</li>
-              <li className="flex gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />X-EventRelay-Signature: HMAC-SHA256 over timestamp + raw body.</li>
-              <li className="flex gap-2"><Terminal className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />Full attempt history and OpenAPI docs in the dashboard.</li>
+              <li className="flex gap-2"><Braces className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />Idempotency-Key header makes producer retries safe by default.</li>
+              <li className="flex gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />X-EventRelay-Signature: HMAC-SHA256 over timestamp + raw body.</li>
+              <li className="flex gap-2"><Terminal className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />Full attempt history and OpenAPI docs in the dashboard.</li>
             </ul>
-            <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-md bg-indigo-600 px-5 py-3 text-sm font-medium text-white hover:bg-indigo-700">
+            <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-md bg-emerald-700 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
               Get your API key <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -519,13 +519,13 @@ const ok = crypto.timingSafeEqual(
           Create an account, add an endpoint, send one event — and watch the delivery
           log do the worrying for you.
         </p>
-        <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-md bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-700">
+        <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-md bg-emerald-700 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-800">
           Create free account <ArrowRight className="h-4 w-4" />
         </Link>
       </section>
       <footer className="border-t border-slate-200 bg-slate-50">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-6 text-[13px] text-slate-500">
-          <span className="flex items-center gap-2"><Webhook className="h-4 w-4 text-indigo-600" /> EventRelay</span>
+          <span className="flex items-center gap-2"><Webhook className="h-4 w-4 text-emerald-700" /> EventRelay</span>
           <span className="font-mono text-[11px]">at-least-once delivery · Postgres source of truth · signed webhooks</span>
           <span className="ml-auto flex gap-5">
             <a className="hover:text-slate-900" href="#problem">Problem</a>
@@ -663,7 +663,7 @@ function Deliveries() {
             key={s}
             onClick={() => setFilter(s)}
             className={`rounded-md border px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider ${
-              filter === s ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+              filter === s ? 'border-emerald-700 bg-emerald-700 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
             }`}
           >
             {s}
@@ -680,11 +680,11 @@ function Deliveries() {
               <span className="tnum text-xs text-slate-500">attempts {d.attempt_count} · replays {d.replay_count}</span>
               <span className="ml-auto flex items-center gap-3">
                 {d.last_response_status && <span className="tnum font-mono text-xs text-slate-500">HTTP {d.last_response_status}</span>}
-                <button className="text-[13px] font-medium text-indigo-600 hover:underline" onClick={() => setExpanded(expanded === d.id ? null : d.id)}>
+                <button className="text-[13px] font-medium text-emerald-700 hover:underline" onClick={() => setExpanded(expanded === d.id ? null : d.id)}>
                   {expanded === d.id ? 'Hide attempts' : 'Attempts'}
                 </button>
                 {d.status === 'failed' && (
-                  <button className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-[13px] font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+                  <button className="flex items-center gap-1.5 rounded-md bg-emerald-700 px-2.5 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
                     disabled={replay.isPending} onClick={() => replay.mutate(d.id)}>
                     <RotateCcw className="h-3.5 w-3.5" /> Replay
                   </button>
@@ -752,7 +752,7 @@ function Endpoints() {
         <input className={inputCls} placeholder="Name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         <input className={inputCls} placeholder="https://receiver.example.com/webhook" required value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} />
         <input className={inputCls} placeholder="order.created, order.updated" value={form.eventTypes} onChange={(e) => setForm({ ...form, eventTypes: e.target.value })} />
-        <button className="h-9 rounded-md bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60" disabled={create.isPending}>Create endpoint</button>
+        <button className="h-9 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60" disabled={create.isPending}>Create endpoint</button>
         {create.isError && <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 md:col-span-4">{errorMessage(create.error)}</p>}
       </form>
       <div className="space-y-3">
@@ -799,7 +799,7 @@ function ApiKeys() {
           <strong>API key (shown once):</strong>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
             <code className="break-all rounded border border-amber-200 bg-white px-2 py-1 font-mono text-xs">{created.rawKey}</code>
-            <button className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-2.5 py-1.5 text-[13px] font-medium text-white hover:bg-indigo-700" onClick={() => { navigator.clipboard.writeText(created.rawKey); setCopied(true); }}>
+            <button className="flex items-center gap-1.5 rounded-md bg-emerald-700 px-2.5 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-800" onClick={() => { navigator.clipboard.writeText(created.rawKey); setCopied(true); }}>
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />} {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
@@ -808,7 +808,7 @@ function ApiKeys() {
       )}
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-500">Keys authenticate <code className="font-mono text-xs">POST /v1/events</code> for your applications.</p>
-        <button className="h-9 rounded-md bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60" disabled={create.isPending} onClick={() => create.mutate()}>
+        <button className="h-9 rounded-md bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60" disabled={create.isPending} onClick={() => create.mutate()}>
           Create API key
         </button>
       </div>
