@@ -332,20 +332,21 @@ function Landing() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="border-b border-stone-200 bg-stone-50">
+      <section className="hero-grid border-b border-stone-200 bg-stone-50">
         <div className="mx-auto grid max-w-6xl gap-12 px-6 py-20 lg:grid-cols-2 lg:py-28">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-emerald-800">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-700" /> At-least-once webhook delivery
             </p>
-            <h1 className="mt-5 text-5xl font-semibold leading-[1.05] tracking-tight">
-              Webhooks that arrive.<br />Every time.
+            <h1 className="font-display mt-5 text-6xl leading-[1.02] tracking-tight text-slate-900 lg:text-7xl">
+              Webhooks that <em className="italic text-emerald-700">arrive.</em><br />Every time.
             </h1>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-slate-600">
+            <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-slate-600">
               EventRelay takes the event your app produced and reliably delivers it to every
               subscribed endpoint — retrying through outages, timeouts and crashes, and
               recording every attempt so you can prove what happened.
             </p>
+            <p className="font-hand mt-3 -rotate-1 text-xl text-emerald-800">no silent data loss. ever. (well — read the fine print ↓)</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to="/register" className="flex items-center gap-2 rounded-md bg-emerald-700 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
                 Create free account <ArrowRight className="h-4 w-4" />
@@ -362,7 +363,11 @@ function Landing() {
           </div>
 
           {/* Terminal / delivery log panel */}
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-xl">
+          <div className="relative">
+            <div className="font-hand absolute -top-9 right-2 z-10 rotate-3 rounded border border-amber-300 bg-amber-50 px-3 py-1 text-lg text-amber-900 shadow-sm">
+              billing retried twice, then landed ✓
+            </div>
+            <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-xl">
             <div className="flex items-center gap-2 border-b border-slate-800 px-4 py-2.5">
               <span className="h-2.5 w-2.5 rounded-full bg-rose-500" /><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
               <span className="ml-2 flex items-center gap-1.5 font-mono text-[11px] text-slate-400"><Terminal className="h-3.5 w-3.5" /> ingest + delivery log</span>
@@ -387,6 +392,7 @@ function Landing() {
                 </li>
               ))}
             </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -406,18 +412,20 @@ function Landing() {
 
       {/* ── Problem ── */}
       <section id="problem" className="reveal mx-auto max-w-6xl scroll-mt-20 px-6 py-20">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">The problem</p>
-        <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight">Webhooks fail in boring ways. <span className="text-slate-500">And boring failures lose data.</span></h2>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">[ 01 ] — The problem</p>
+        <h2 className="font-display mt-2 max-w-2xl text-4xl tracking-tight text-slate-900">Webhooks fail in boring ways. <em className="italic text-slate-500">And boring failures lose data.</em></h2>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-600">
           Direct HTTP POSTs from your app to other services break the moment anything hiccups —
           and in a distributed system, something always hiccups.
+          <span className="font-hand ml-2 text-lg text-emerald-800">the usual suspects ↓</span>
         </p>
-        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {problems.map((p) => (
-            <article key={p.title} className="rounded-lg border border-slate-200 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-600/5">
-              <p.icon className="h-5 w-5 text-rose-500" />
-              <h3 className="mt-3 text-sm font-semibold">{p.title}</h3>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">{p.text}</p>
+        <div className="mt-10 border-t border-slate-200">
+          {problems.map((p, i) => (
+            <article key={p.title} className="group grid grid-cols-[3rem_2rem_1fr] items-baseline gap-3 border-b border-slate-200 py-4 transition hover:bg-white sm:grid-cols-[4rem_2rem_14rem_1fr] sm:gap-4">
+              <span className="font-mono text-xs text-slate-400 transition group-hover:text-emerald-700">[{String(i + 1).padStart(2, '0')}]</span>
+              <p.icon className="h-4.5 w-4.5 self-center text-rose-400 transition group-hover:text-rose-600" />
+              <h3 className="text-sm font-semibold">{p.title}</h3>
+              <p className="col-span-3 text-[13px] leading-relaxed text-slate-600 sm:col-span-1">{p.text}</p>
             </article>
           ))}
         </div>
@@ -426,8 +434,8 @@ function Landing() {
       {/* ── How it works ── */}
       <section id="how" className="reveal scroll-mt-20 border-y border-emerald-900 bg-emerald-950 py-20 text-slate-100">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-amber-400">How it works</p>
-          <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight">Four steps. Zero silent data loss.</h2>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-amber-400">[ 02 ] — How it works</p>
+          <h2 className="font-display mt-2 max-w-2xl text-4xl tracking-tight">Four steps. <em className="italic text-emerald-300">Zero silent data loss.</em></h2>
           <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {steps.map((s, i) => (
               <article key={s.n} className="relative rounded-lg border border-emerald-800 bg-emerald-900/30 p-5">
@@ -448,8 +456,8 @@ function Landing() {
 
       {/* ── Reliability ── */}
       <section id="reliability" className="reveal mx-auto max-w-6xl scroll-mt-20 px-6 py-20">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">Reliability</p>
-        <h2 className="mt-2 text-3xl font-semibold tracking-tight">Direct POST vs EventRelay</h2>
+        <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">[ 03 ] — Reliability</p>
+        <h2 className="font-display mt-2 text-4xl tracking-tight">Direct POST <em className="italic text-slate-400">vs</em> EventRelay</h2>
         <div className="mt-8 overflow-hidden rounded-lg border border-slate-200">
           <table className="w-full text-sm">
             <thead>
@@ -501,8 +509,8 @@ function Landing() {
       <section id="developers" className="reveal scroll-mt-20 border-y border-stone-200 bg-stone-50 py-20">
         <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-2">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">Developers</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight">Two integrations. Ten minutes.</h2>
+            <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">[ 04 ] — Developers</p>
+            <h2 className="font-display mt-2 text-4xl tracking-tight">Two integrations. <em className="italic text-emerald-700">Ten minutes.</em></h2>
             <p className="mt-3 text-[15px] leading-relaxed text-slate-600">
               Send events with your API key, and verify signed webhooks on the receiving side.
               No SDK required — plain HTTPS in, plain HTTPS out.
