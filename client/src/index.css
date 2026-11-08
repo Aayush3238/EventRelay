@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Caveat:wght@600&display=swap');
 @import "tailwindcss";
 
 /* EventRelay ops console theme (from Stitch design system):
@@ -16,6 +16,25 @@ body {
 
 .font-mono, code, kbd {
   font-family: var(--font-mono);
+}
+
+/* Human-designed touches: editorial serif for display type, handwriting
+   for annotations, warm selection colour, and a faint drafting grid. */
+.font-display {
+  font-family: "Instrument Serif", Georgia, serif;
+}
+.font-hand {
+  font-family: "Caveat", cursive;
+}
+::selection {
+  background: #a7f3d0;
+  color: #064e3b;
+}
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgb(15 23 42 / 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(15 23 42 / 0.045) 1px, transparent 1px);
+  background-size: 44px 44px;
 }
 
 /* Tabular figures for numbers so metric columns don't jitter on re-render */
