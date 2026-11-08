@@ -1,6 +1,6 @@
 // EventRelay dashboard. Server state lives in React Query; after mutations
 // (replay, revoke, create) we invalidate queries instead of hand-syncing.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Routes, Route, Link, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -269,6 +269,17 @@ function Register() {
 // reliable — in that order, because nobody cares about features before
 // they feel the pain.
 function Landing() {
+  // Scroll reveal: sections/cards fade up as they enter the viewport.
+  useEffect(() => {
+    const els = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); } }),
+      { threshold: 0.12 }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
   if (token()) return <Navigate to="/dashboard" replace />;
 
   const problems = [
@@ -361,15 +372,15 @@ function Landing() {
     -H "X-API-Key: er_live_..." \\
     -H "Idempotency-Key: order-1001" \\
     -d '{"type":"order.created","data":{"orderId":"ORD-1001"}}'
-→ 202 { "deliveriesCreated": 3 }`}
+→ 202 { "deliveriesCreated": 3 }<span className="caret-blink text-emerald-400">▋</span>`}
             </pre>
             <ul className="space-y-px border-t border-slate-800 bg-slate-800/50 p-3 font-mono text-[11px]">
               {[
                 ['warehouse.example.com', 'succeeded', '200 · 142ms'],
                 ['billing.example.com', 'retrying', '503 · attempt 2/6'],
                 ['analytics.example.com', 'succeeded', '200 · 89ms'],
-              ].map(([host, st, meta]) => (
-                <li key={host} className="flex items-center gap-3 rounded bg-slate-900 px-3 py-2">
+              ].map(([host, st, meta], i) => (
+                <li key={host} className="log-item flex items-center gap-3 rounded bg-slate-900 px-3 py-2" style={{ animationDelay: `${0.3 + i * 0.35}s` }}>
                   <Badge status={st} />
                   <span className="truncate text-slate-300">{host}</span>
                   <span className="tnum ml-auto shrink-0 text-slate-500">{meta}</span>
@@ -380,8 +391,21 @@ function Landing() {
         </div>
       </section>
 
+      {/* ── Event-type ticker ── */}
+      <div className="overflow-hidden border-b border-stone-200 bg-white py-3">
+        <div className="marquee-track flex w-max gap-10 whitespace-nowrap font-mono text-[11px] uppercase tracking-widest text-slate-400">
+          {[...Array(2)].map((_, dup) => (
+            <span key={dup} className="flex gap-10">
+              {['order.created', 'payment.succeeded', 'user.signup', 'invoice.paid', 'shipment.delivered', 'subscription.cancelled', 'refund.issued', 'inventory.low'].map((t) => (
+                <span key={t} className="flex items-center gap-10"><span>{t}</span><span className="h-1 w-1 rounded-full bg-emerald-500" /></span>
+              ))}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* ── Problem ── */}
-      <section id="problem" className="mx-auto max-w-6xl scroll-mt-20 px-6 py-20">
+      <section id="problem" className="reveal mx-auto max-w-6xl scroll-mt-20 px-6 py-20">
         <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">The problem</p>
         <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight">Webhooks fail in boring ways. <span className="text-slate-500">And boring failures lose data.</span></h2>
         <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-600">
@@ -390,7 +414,7 @@ function Landing() {
         </p>
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {problems.map((p) => (
-            <article key={p.title} className="rounded-lg border border-slate-200 bg-white p-5 hover:border-slate-300">
+            <article key={p.title} className="rounded-lg border border-slate-200 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-600/5">
               <p.icon className="h-5 w-5 text-rose-500" />
               <h3 className="mt-3 text-sm font-semibold">{p.title}</h3>
               <p className="mt-1.5 text-[13px] leading-relaxed text-slate-600">{p.text}</p>
@@ -400,7 +424,7 @@ function Landing() {
       </section>
 
       {/* ── How it works ── */}
-      <section id="how" className="scroll-mt-20 border-y border-emerald-900 bg-emerald-950 py-20 text-slate-100">
+      <section id="how" className="reveal scroll-mt-20 border-y border-emerald-900 bg-emerald-950 py-20 text-slate-100">
         <div className="mx-auto max-w-6xl px-6">
           <p className="font-mono text-[11px] uppercase tracking-widest text-amber-400">How it works</p>
           <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight">Four steps. Zero silent data loss.</h2>
@@ -423,7 +447,7 @@ function Landing() {
       </section>
 
       {/* ── Reliability ── */}
-      <section id="reliability" className="mx-auto max-w-6xl scroll-mt-20 px-6 py-20">
+      <section id="reliability" className="reveal mx-auto max-w-6xl scroll-mt-20 px-6 py-20">
         <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">Reliability</p>
         <h2 className="mt-2 text-3xl font-semibold tracking-tight">Direct POST vs EventRelay</h2>
         <div className="mt-8 overflow-hidden rounded-lg border border-slate-200">
@@ -474,7 +498,7 @@ function Landing() {
       </section>
 
       {/* ── Developers ── */}
-      <section id="developers" className="scroll-mt-20 border-y border-stone-200 bg-stone-50 py-20">
+      <section id="developers" className="reveal scroll-mt-20 border-y border-stone-200 bg-stone-50 py-20">
         <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-2">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-widest text-emerald-700">Developers</p>
