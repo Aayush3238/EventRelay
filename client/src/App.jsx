@@ -175,7 +175,7 @@ function AuthLayout({ title, subtitle, children }) {
             <li className="flex gap-2.5"><Activity className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" /> Every attempt recorded — inspect, replay, recover.</li>
           </ul>
         </div>
-        <pre className="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950 p-4 font-mono text-[11px] leading-relaxed text-slate-400">
+        <pre className="w-full max-w-full whitespace-pre-wrap break-words rounded-lg border border-slate-800 bg-slate-950 p-4 font-mono text-[11px] leading-relaxed text-slate-400">
 {`curl -X POST /v1/events \\
   -H "X-API-Key: er_live_..." \\
   -d '{"type":"order.created","data":{...}}'`}
@@ -353,10 +353,15 @@ function Landing() {
               Webhooks that <em className="italic text-orange-700">arrive.</em><br />Every time.
             </h1>
             <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-slate-600">
-              EventRelay takes the event your app produced and reliably delivers it to every
-              subscribed endpoint — retrying through outages, timeouts and crashes, and
-              recording every attempt so you can prove what happened.
+              Send <strong className="font-semibold text-slate-900">one event</strong> — EventRelay delivers it to
+              <strong className="font-semibold text-slate-900"> every subscribed endpoint</strong>, with automatic
+              retries when a receiver is down and a full delivery history you can inspect and replay.
             </p>
+            <ul className="mt-4 space-y-1.5 text-sm text-slate-700">
+              <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" /> One <code className="font-mono text-xs">POST /v1/events</code> fans out to all your endpoints</li>
+              <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" /> Automatic retries with backoff — root through outages for you</li>
+              <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-orange-600" /> Every attempt recorded: status, timing, response, replay</li>
+            </ul>
             <p className="font-hand mt-3 -rotate-1 text-xl text-orange-800">no silent data loss. ever. (well — read the fine print ↓)</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link to={loggedIn ? '/dashboard' : '/register'} className="flex items-center gap-2 rounded-md bg-orange-600 px-5 py-3 text-sm font-medium text-white hover:bg-orange-700">
@@ -383,12 +388,12 @@ function Landing() {
               <span className="h-2.5 w-2.5 rounded-full bg-rose-500" /><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
               <span className="ml-2 flex items-center gap-1.5 font-mono text-[11px] text-slate-400"><Terminal className="h-3.5 w-3.5" /> ingest + delivery log</span>
             </div>
-            <pre className="overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-slate-300">
+            <pre className="whitespace-pre-wrap break-words p-4 font-mono text-[12px] leading-relaxed text-slate-300">
 {`$ curl -X POST /v1/events \\
-    -H "X-API-Key: er_live_..." \\
-    -H "Idempotency-Key: order-1001" \\
-    -d '{"type":"order.created","data":{"orderId":"ORD-1001"}}'
-→ 202 { "deliveriesCreated": 3 }<span className="caret-blink text-emerald-400">▋</span>`}
+  -H "X-API-Key: er_live_..." \\
+  -d '{"type":"order.created","data":{"orderId":"ORD-1001"}}'
+→ 202 { "deliveriesCreated": 3 }`}
+              <span className="caret-blink text-emerald-400">▋</span>
             </pre>
             <ul className="space-y-px border-t border-slate-800 bg-slate-800/50 p-3 font-mono text-[11px]">
               {[
@@ -537,7 +542,7 @@ function Landing() {
           </div>
           <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
             <div className="border-b border-slate-800 px-4 py-2.5 font-mono text-[11px] text-slate-400">verify-signature.js</div>
-            <pre className="overflow-x-auto p-4 font-mono text-[12px] leading-relaxed text-slate-300">
+            <pre className="whitespace-pre-wrap break-words p-4 font-mono text-[12px] leading-relaxed text-slate-300">
 {`import crypto from 'node:crypto';
 
 const expected = crypto
