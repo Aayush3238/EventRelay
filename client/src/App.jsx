@@ -270,6 +270,7 @@ function Register() {
 // reliable — in that order, because nobody cares about features before
 // they feel the pain.
 function Landing() {
+  const [activeSection, setActiveSection] = useState('');
   // Scroll reveal: sections/cards fade up as they enter the viewport.
   useEffect(() => {
     const els = document.querySelectorAll('.reveal');
@@ -280,6 +281,29 @@ function Landing() {
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
+
+  // Scroll-spy: highlight the nav link for the section currently in view.
+  useEffect(() => {
+    const spy = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) setActiveSection(e.target.id); }),
+      { rootMargin: '-40% 0px -55% 0px' }
+    );
+    ['problem', 'how', 'reliability', 'developers'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) spy.observe(el);
+    });
+    return () => spy.disconnect();
+  }, []);
+
+  const navLinkCls = (id) => `relative px-1 py-1 transition-colors ${
+    activeSection === id ? 'font-semibold text-orange-700' : 'hover:text-slate-900'
+  }`;
+  const NavAnchor = ({ id, children }) => (
+    <a href={`#${id}`} className={navLinkCls(id)}>
+      {children}
+      <span className={`absolute inset-x-0 -bottom-0.5 h-0.5 rounded-full bg-orange-600 transition-opacity ${activeSection === id ? 'opacity-100' : 'opacity-0'}`} />
+    </a>
+  );
 
   // Logged-in users can also browse the landing page — they just get a
   // "Dashboard" button in the nav instead of Sign in / Get started.
@@ -322,10 +346,10 @@ function Landing() {
             <span className="text-[15px] font-semibold tracking-tight">EventRelay</span>
           </Link>
           <nav className="hidden items-center gap-6 text-[13px] font-medium text-slate-600 md:flex">
-            <a className="hover:text-slate-900" href="#problem">Problem</a>
-            <a className="hover:text-slate-900" href="#how">How it works</a>
-            <a className="hover:text-slate-900" href="#reliability">Reliability</a>
-            <a className="hover:text-slate-900" href="#developers">Developers</a>
+            <NavAnchor id="problem">Problem</NavAnchor>
+            <NavAnchor id="how">How it works</NavAnchor>
+            <NavAnchor id="reliability">Reliability</NavAnchor>
+            <NavAnchor id="developers">Developers</NavAnchor>
           </nav>
           <div className="ml-auto flex items-center gap-2">
             {loggedIn ? (
