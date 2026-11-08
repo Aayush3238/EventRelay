@@ -668,7 +668,7 @@ function Events() {
           </tbody>
         </table>
       ) : (
-        <EmptyState>No events yet. Ingest one with <code className="font-mono text-xs">POST /v1/events</code> — see USER_MANUAL.md §7.</EmptyState>
+        <EmptyState>No events yet. Ingest one with <code className="font-mono text-xs">POST /v1/events</code> using your API key.</EmptyState>
       )}
     </div>
   );
