@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   LayoutDashboard, Webhook, ListOrdered, KeyRound, LogOut, RotateCcw, Copy, Check,
   Activity, ShieldCheck, Zap, ArrowRight, WifiOff, Clock3, AlertTriangle, Database,
-  Copy as CopyIcon, TrendingUp, Lock, Terminal, Braces, X, ChevronRight,
+  Copy as CopyIcon, TrendingUp, Lock, Terminal, Braces, X, ChevronRight, Home,
 } from 'lucide-react';
 import { api, errorMessage } from './lib/api';
 
@@ -46,6 +46,7 @@ function Shell({ children }) {
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           <p className="px-3 pb-2 font-mono text-[10px] uppercase tracking-widest text-slate-500">Operations</p>
+          <Link className="flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-100" to="/"><Home className="h-4 w-4" /> Home page</Link>
           <NavLink className={navCls} end to="/dashboard"><LayoutDashboard className="h-4 w-4" /> Overview</NavLink>
           <NavLink className={navCls} to="/events"><ListOrdered className="h-4 w-4" /> Events</NavLink>
           <NavLink className={navCls} to="/deliveries"><Activity className="h-4 w-4" /> Deliveries</NavLink>
@@ -280,7 +281,9 @@ function Landing() {
     return () => io.disconnect();
   }, []);
 
-  if (token()) return <Navigate to="/dashboard" replace />;
+  // Logged-in users can also browse the landing page — they just get a
+  // "Dashboard" button in the nav instead of Sign in / Get started.
+  const loggedIn = Boolean(token());
 
   const problems = [
     { icon: WifiOff, title: 'Receiver is down', text: 'Your warehouse service is deploying. The order event is gone — unless someone retries it.' },
@@ -325,8 +328,16 @@ function Landing() {
             <a className="hover:text-slate-900" href="#developers">Developers</a>
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <Link to="/login" className="rounded-md px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-100">Sign in</Link>
-            <Link to="/register" className="rounded-md bg-emerald-700 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-emerald-800">Get started</Link>
+            {loggedIn ? (
+              <>
+                <Link to="/dashboard" className="rounded-md bg-emerald-700 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-emerald-800">Open dashboard</Link>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="rounded-md px-3 py-2 text-[13px] font-medium text-slate-700 hover:bg-slate-100">Sign in</Link>
+                <Link to="/register" className="rounded-md bg-emerald-700 px-3.5 py-2 text-[13px] font-medium text-white hover:bg-emerald-800">Get started</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -348,8 +359,8 @@ function Landing() {
             </p>
             <p className="font-hand mt-3 -rotate-1 text-xl text-emerald-800">no silent data loss. ever. (well — read the fine print ↓)</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className="flex items-center gap-2 rounded-md bg-emerald-700 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
-                Create free account <ArrowRight className="h-4 w-4" />
+              <Link to={loggedIn ? '/dashboard' : '/register'} className="flex items-center gap-2 rounded-md bg-emerald-700 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
+                {loggedIn ? 'Open dashboard' : 'Create free account'} <ArrowRight className="h-4 w-4" />
               </Link>
               <a href="#how" className="rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-medium text-slate-700 hover:border-slate-400">
                 How it works
@@ -520,8 +531,8 @@ function Landing() {
               <li className="flex gap-2"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />X-EventRelay-Signature: HMAC-SHA256 over timestamp + raw body.</li>
               <li className="flex gap-2"><Terminal className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />Full attempt history and OpenAPI docs in the dashboard.</li>
             </ul>
-            <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-md bg-emerald-700 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
-              Get your API key <ArrowRight className="h-4 w-4" />
+            <Link to={loggedIn ? '/dashboard' : '/register'} className="mt-8 inline-flex items-center gap-2 rounded-md bg-emerald-700 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-800">
+              {loggedIn ? 'Open dashboard' : 'Get your API key'} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
@@ -551,8 +562,8 @@ const ok = crypto.timingSafeEqual(
           Create an account, add an endpoint, send one event — and watch the delivery
           log do the worrying for you.
         </p>
-        <Link to="/register" className="mt-8 inline-flex items-center gap-2 rounded-md bg-emerald-700 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-800">
-          Create free account <ArrowRight className="h-4 w-4" />
+        <Link to={loggedIn ? '/dashboard' : '/register'} className="mt-8 inline-flex items-center gap-2 rounded-md bg-emerald-700 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-800">
+          {loggedIn ? 'Open dashboard' : 'Create free account'} <ArrowRight className="h-4 w-4" />
         </Link>
       </section>
       <footer className="border-t border-slate-200 bg-slate-50">
