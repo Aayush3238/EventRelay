@@ -3,7 +3,12 @@
 
 function retryableStatusCodes() {
   const raw = process.env.RETRYABLE_STATUS_CODES || '408,425,429';
-  const set = new Set(raw.split(',').map((s) => Number(s.trim())).filter(Boolean));
+  const set = new Set(
+    raw
+      .split(',')
+      .map((s) => Number(s.trim()))
+      .filter(Boolean),
+  );
   return set;
 }
 

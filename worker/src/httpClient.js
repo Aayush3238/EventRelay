@@ -11,7 +11,12 @@ function postWebhook({ url, headers, body, timeoutMs, lookup, maxResponseBytes }
     const transport = target.protocol === 'https:' ? https : http;
     const startedAt = Date.now();
     let settled = false;
-    const done = (fn, value) => { if (!settled) { settled = true; fn(value); } };
+    const done = (fn, value) => {
+      if (!settled) {
+        settled = true;
+        fn(value);
+      }
+    };
 
     const req = transport.request(
       {
@@ -35,22 +40,27 @@ function postWebhook({ url, headers, body, timeoutMs, lookup, maxResponseBytes }
           if (size + chunk.length > maxResponseBytes) {
             truncated = true;
             const remaining = maxResponseBytes - size;
-            if (remaining > 0) { chunks.push(chunk.subarray(0, remaining)); size += remaining; }
+            if (remaining > 0) {
+              chunks.push(chunk.subarray(0, remaining));
+              size += remaining;
+            }
             res.destroy(); // stop reading; status already captured
           } else {
             chunks.push(chunk);
             size += chunk.length;
           }
         });
-        res.on('end', () => done(resolve, {
-          status: res.statusCode,
-          headers: res.headers,
-          body: Buffer.concat(chunks).toString('utf8'),
-          truncated,
-          responseTimeMs: Date.now() - startedAt,
-        }));
+        res.on('end', () =>
+          done(resolve, {
+            status: res.statusCode,
+            headers: res.headers,
+            body: Buffer.concat(chunks).toString('utf8'),
+            truncated,
+            responseTimeMs: Date.now() - startedAt,
+          }),
+        );
         res.on('error', (err) => done(reject, err));
-      }
+      },
     );
 
     req.on('timeout', () => {

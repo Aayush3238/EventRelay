@@ -42,7 +42,11 @@ paths:
     delete: { summary: Revoke API key, responses: { '200': { description: revoked } } }
   /endpoints:
     get: { summary: List endpoints (no secrets), responses: { '200': { description: ok } } }
-    post: { summary: Create endpoint (signing secret returned once), responses: { '201': { description: created }, '422': { description: SSRF/validation } } }
+    post:
+      {
+        summary: Create endpoint (signing secret returned once),
+        responses: { '201': { description: created }, '422': { description: SSRF/validation } },
+      }
   /endpoints/{id}:
     get: { summary: Get endpoint, responses: { '200': { description: ok } } }
     put: { summary: Update endpoint + subscriptions, responses: { '200': { description: ok } } }
@@ -80,12 +84,14 @@ paths:
   /events/{id}:
     get: { summary: Event detail + deliveries, responses: { '200': { description: ok } } }
   /deliveries:
-    get: { summary: List deliveries (filter: status, endpointId), responses: { '200': { description: ok } } }
+    get:
+      summary: 'List deliveries (filter: status, endpointId)'
+      responses: { '200': { description: ok } }
   /deliveries/{id}:
     get: { summary: Delivery detail + attempt history, responses: { '200': { description: ok } } }
   /deliveries/{id}/replay:
     post:
-      summary: Replay a FAILED delivery (v1: failed-only)
+      summary: 'Replay a FAILED delivery (v1: failed-only)'
       responses:
         '202': { description: Replay queued }
         '409': { description: Delivery is not in failed state }

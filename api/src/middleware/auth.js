@@ -33,7 +33,7 @@ async function requireApiKey(req, _res, next) {
     const prefix = raw.slice(0, 16);
     const { rows } = await query(
       `SELECT id, user_id, key_hash, revoked_at, expires_at FROM api_keys WHERE key_prefix = $1`,
-      [prefix]
+      [prefix],
     );
     const key = rows[0];
     if (!key || !verifyApiKeyHash(raw, key.key_hash)) {

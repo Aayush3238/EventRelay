@@ -28,15 +28,15 @@ services:
       - key: LOG_LEVEL
         value: info
       - key: CLIENT_URL
-        sync: false  # e.g. https://your-app.vercel.app — set AFTER Vercel deploy
+        sync: false # e.g. https://your-app.vercel.app — set AFTER Vercel deploy
       - key: DATABASE_URL
-        sync: false  # same value as in your local .env
+        sync: false # same value as in your local .env
       - key: REDIS_URL
         sync: false
       - key: JWT_SECRET
-        sync: false  # generate: node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
+        sync: false # generate: node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
       - key: ENCRYPTION_KEY
-        sync: false  # 32 bytes base64: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+        sync: false # 32 bytes base64: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
   - type: worker
     name: eventrelay-worker
@@ -54,7 +54,7 @@ services:
       - key: REDIS_URL
         sync: false
       - key: ENCRYPTION_KEY
-        sync: false  # MUST match the API service exactly
+        sync: false # MUST match the API service exactly
 
   - type: worker
     name: eventrelay-dispatcher

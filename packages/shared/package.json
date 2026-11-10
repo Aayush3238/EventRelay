@@ -4,6 +4,13 @@
   "private": true,
   "type": "commonjs",
   "main": "src/index.js",
-  "scripts": { "test": "jest --passWithNoTests" },
-  "jest": { "testEnvironment": "node", "roots": ["__tests__"] }
+  "scripts": {
+    "test": "jest --passWithNoTests"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "__tests__"
+    ]
+  }
 }

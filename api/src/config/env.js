@@ -13,7 +13,7 @@ function assertLeaseSafety() {
   if (leaseMs < minimum) {
     throw new Error(
       `DELIVERY_LEASE_MS=${leaseMs} is too small: needs >= ${minimum} ` +
-      `(3x MAX_ENDPOINT_TIMEOUT_MS=${maxTimeout} + 10s margin)`
+        `(3x MAX_ENDPOINT_TIMEOUT_MS=${maxTimeout} + 10s margin)`,
     );
   }
   if ((process.env.NODE_ENV || 'development') === 'production') {

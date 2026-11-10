@@ -48,9 +48,23 @@ const endpointSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-const ingestSchema = z.object({
-  type: z.string().min(1).max(200).regex(/^[A-Za-z0-9._-]+$/, 'Invalid event type'),
-  data: z.record(z.any()),
-}).strict();
+const ingestSchema = z
+  .object({
+    type: z
+      .string()
+      .min(1)
+      .max(200)
+      .regex(/^[A-Za-z0-9._-]+$/, 'Invalid event type'),
+    data: z.record(z.any()),
+  })
+  .strict();
 
-module.exports = { validate, paginationSchema, registerSchema, loginSchema, createApiKeySchema, endpointSchema, ingestSchema };
+module.exports = {
+  validate,
+  paginationSchema,
+  registerSchema,
+  loginSchema,
+  createApiKeySchema,
+  endpointSchema,
+  ingestSchema,
+};

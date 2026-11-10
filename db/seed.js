@@ -18,7 +18,7 @@ async function main() {
     `INSERT INTO users (name, email, password_hash) VALUES ('Dev', $1, $2)
      ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash
      RETURNING id`,
-    [email, passwordHash]
+    [email, passwordHash],
   );
   const userId = rows[0].id;
 
@@ -26,7 +26,7 @@ async function main() {
   await pool.query(
     `INSERT INTO api_keys (id, user_id, name, key_prefix, key_hash)
      VALUES ($1, $2, 'seed', $3, $4) ON CONFLICT (key_prefix) DO NOTHING`,
-    [crypto.randomUUID(), userId, prefix, hash]
+    [crypto.randomUUID(), userId, prefix, hash],
   );
 
   const secret = generateSigningSecret();
@@ -34,21 +34,34 @@ async function main() {
   await pool.query(
     `INSERT INTO endpoints (id, user_id, name, url, signing_secret_encrypted)
      VALUES ($1, $2, 'local receiver', 'http://localhost:5001/webhook', $3)`,
-    [epId, userId, encryptSecret(secret)]
+    [epId, userId, encryptSecret(secret)],
   );
   await pool.query(
     `INSERT INTO endpoint_event_types (endpoint_id, event_type)
      VALUES ($1, 'order.created') ON CONFLICT DO NOTHING`,
-    [epId]
+    [epId],
   );
 
-  console.log(JSON.stringify({
-    hint: 'seeded dev user',
-    email, password: 'dev-password-123',
-    apiKey: raw,
-    signingSecret: secret,
-    note: 'start receiver: npm run dev:receiver -- 5001 ' + secret,
-  }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        hint: 'seeded dev user',
+        email,
+        password: 'dev-password-123',
+        apiKey: raw,
+        signingSecret: secret,
+        note: 'start receiver: npm run dev:receiver -- 5001 ' + secret,
+      },
+      null,
+      2,
+    ),
+  );
 }
 
-main().then(() => pool.end()).catch((err) => { console.error(err); pool.end(); process.exit(1); });
+main()
+  .then(() => pool.end())
+  .catch((err) => {
+    console.error(err);
+    pool.end();
+    process.exit(1);
+  });

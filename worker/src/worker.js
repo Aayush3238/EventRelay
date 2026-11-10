@@ -27,7 +27,7 @@ function startWorker() {
         return { error: String(err.message || err) };
       }
     },
-    { connection: createConnection(), concurrency: config.concurrency }
+    { connection: createConnection(), concurrency: config.concurrency },
   );
 
   worker.on('failed', (job, err) => logger.error({ err, jobId: job?.id }, 'bullmq job failed'));
@@ -43,14 +43,19 @@ function startWorker() {
 
 // Mode via argv flag OR env var — Render can't pass argv flags reliably
 // through dockerCommand, so WORKER_MODE=dispatcher is the deploy-friendly way.
-const mode = (process.argv.includes('--mode=dispatcher') || process.env.WORKER_MODE === 'dispatcher')
-  ? 'dispatcher'
-  : 'worker';
+const mode =
+  process.argv.includes('--mode=dispatcher') || process.env.WORKER_MODE === 'dispatcher'
+    ? 'dispatcher'
+    : 'worker';
 
 async function main() {
   if (mode === 'dispatcher') {
     const stop = await startDispatcher();
-    const shutdown = async () => { await stop(); await pool.end(); process.exit(0); };
+    const shutdown = async () => {
+      await stop();
+      await pool.end();
+      process.exit(0);
+    };
     process.on('SIGTERM', shutdown);
     process.on('SIGINT', shutdown);
     return;
@@ -67,7 +72,10 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch((err) => { logger.fatal({ err }, 'worker failed to start'); process.exit(1); });
+  main().catch((err) => {
+    logger.fatal({ err }, 'worker failed to start');
+    process.exit(1);
+  });
 }
 
 module.exports = { startWorker };

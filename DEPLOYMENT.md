@@ -72,7 +72,7 @@ Worker ──HTTPS POST──▶ your users' webhook endpoints (must be public)
 ## Part 4 — Smoke test the whole pipeline
 
 1. In the dashboard: create an **API key** (copy it — shown once).
-2. Create an **endpoint** pointing at a *public* HTTPS receiver
+2. Create an **endpoint** pointing at a _public_ HTTPS receiver
    (e.g. a [webhook.site](https://webhook.site) URL, or any public HTTPS
    echo). ⚠️ `http://localhost` endpoints will fail in production —
    SSRF validation blocks private addresses and prod requires HTTPS.
@@ -97,15 +97,15 @@ Worker ──HTTPS POST──▶ your users' webhook endpoints (must be public)
 
 ## Environment variable reference (Render)
 
-| Variable | API | Worker | Dispatcher | Notes |
-|---|---|---|---|---|
-| `NODE_ENV=production` | ✓ | ✓ | ✓ | Enforces HTTPS-only endpoints; forbids local allowlist |
-| `DATABASE_URL` | ✓ | ✓ | ✓ | Same value everywhere |
-| `REDIS_URL` | – | ✓ | ✓ | BullMQ queue |
-| `JWT_SECRET` | ✓ | – | – | ≥ 32 chars |
-| `ENCRYPTION_KEY` | ✓ | ✓ | – | 32 bytes base64; must match API ⇄ worker |
-| `CLIENT_URL` | ✓ | – | – | Vercel URL, no trailing slash |
-| `DELIVERY_LEASE_MS` | – | ✓ | – | Default 100000 is fine; must stay ≥ 3× max endpoint timeout + 10s |
+| Variable              | API | Worker | Dispatcher | Notes                                                             |
+| --------------------- | --- | ------ | ---------- | ----------------------------------------------------------------- |
+| `NODE_ENV=production` | ✓   | ✓      | ✓          | Enforces HTTPS-only endpoints; forbids local allowlist            |
+| `DATABASE_URL`        | ✓   | ✓      | ✓          | Same value everywhere                                             |
+| `REDIS_URL`           | –   | ✓      | ✓          | BullMQ queue                                                      |
+| `JWT_SECRET`          | ✓   | –      | –          | ≥ 32 chars                                                        |
+| `ENCRYPTION_KEY`      | ✓   | ✓      | –          | 32 bytes base64; must match API ⇄ worker                          |
+| `CLIENT_URL`          | ✓   | –      | –          | Vercel URL, no trailing slash                                     |
+| `DELIVERY_LEASE_MS`   | –   | ✓      | –          | Default 100000 is fine; must stay ≥ 3× max endpoint timeout + 10s |
 
 Defaults for retries/timeouts (`MAX_ATTEMPTS`, backoff, etc.) are already
 sensible — override only if you know why.
@@ -126,15 +126,15 @@ sensible — override only if you know why.
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Fix |
-|---|---|---|
-| Dashboard loads, login fails with CORS error | `CLIENT_URL` wrong/missing | Set it to the exact Vercel URL, redeploy API |
-| API `/health` 502/503 on Render | Service still building, or free-tier sleeping | Wait/retry; check Render logs |
-| Events ingested but never delivered | Dispatcher/worker not running (or service asleep) | Check service logs for `dispatcher started` / `worker started`; check Redis URL; wake the service |
-| Deliveries stuck `processing` | Worker crashed / lease expired, sweeper should recover in ~15s | Check service logs; in free mode the sweeper runs in the same process |
-| `signing_secret_decrypt_failed` in attempt history | `ENCRYPTION_KEY` wrong/changed after endpoints were created | Set the original `ENCRYPTION_KEY`; secrets encrypted with an old key can't be decrypted with a new one |
-| Endpoint creation rejected (422 SSRF) | URL is http in prod, or resolves to a private IP | Use a public HTTPS URL |
-| `DELIVERY_LEASE_MS too small` on boot | Lease < 3× max timeout + margin | Raise `DELIVERY_LEASE_MS` (≥ 100000) |
+| Symptom                                            | Likely cause                                                   | Fix                                                                                                    |
+| -------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Dashboard loads, login fails with CORS error       | `CLIENT_URL` wrong/missing                                     | Set it to the exact Vercel URL, redeploy API                                                           |
+| API `/health` 502/503 on Render                    | Service still building, or free-tier sleeping                  | Wait/retry; check Render logs                                                                          |
+| Events ingested but never delivered                | Dispatcher/worker not running (or service asleep)              | Check service logs for `dispatcher started` / `worker started`; check Redis URL; wake the service      |
+| Deliveries stuck `processing`                      | Worker crashed / lease expired, sweeper should recover in ~15s | Check service logs; in free mode the sweeper runs in the same process                                  |
+| `signing_secret_decrypt_failed` in attempt history | `ENCRYPTION_KEY` wrong/changed after endpoints were created    | Set the original `ENCRYPTION_KEY`; secrets encrypted with an old key can't be decrypted with a new one |
+| Endpoint creation rejected (422 SSRF)              | URL is http in prod, or resolves to a private IP               | Use a public HTTPS URL                                                                                 |
+| `DELIVERY_LEASE_MS too small` on boot              | Lease < 3× max timeout + margin                                | Raise `DELIVERY_LEASE_MS` (≥ 100000)                                                                   |
 
 ## After every code change
 

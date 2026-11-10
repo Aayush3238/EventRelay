@@ -12,7 +12,7 @@ async function sweepOnce() {
        FROM deliveries d JOIN endpoints ep ON ep.id = d.endpoint_id
        WHERE d.status = 'processing' AND d.locked_until < NOW()
        ORDER BY d.locked_until LIMIT 50
-       FOR UPDATE OF d SKIP LOCKED`
+       FOR UPDATE OF d SKIP LOCKED`,
     );
     if (!stuck.length) return 0;
 
@@ -23,7 +23,7 @@ async function sweepOnce() {
          SET status = 'worker_lost', error_message = 'lease_expired',
              completed_at = NOW()
          WHERE delivery_id = $1 AND status = 'in_progress'`,
-        [d.id]
+        [d.id],
       );
 
       const exhausted = d.attempt_count >= (d.max_attempts || 6);
@@ -33,7 +33,7 @@ async function sweepOnce() {
            SET status = 'failed', dead_lettered_at = NOW(),
                lock_token = NULL, locked_until = NULL, updated_at = NOW()
            WHERE id = $1`,
-          [d.id]
+          [d.id],
         );
       } else {
         await client.query(
@@ -41,12 +41,12 @@ async function sweepOnce() {
            SET status = 'retrying', next_attempt_at = NOW(),
                lock_token = NULL, locked_until = NULL, updated_at = NOW()
            WHERE id = $1`,
-          [d.id]
+          [d.id],
         );
         await client.query(
           `INSERT INTO outbox_messages (id, message_type, aggregate_id, available_at)
            VALUES ($1, 'delivery.recovery', $2, NOW())`,
-          [crypto.randomUUID(), d.id]
+          [crypto.randomUUID(), d.id],
         );
       }
     }
@@ -59,12 +59,19 @@ function startSweeper(intervalMs = 15000) {
   let stopped = false;
   const loop = async () => {
     while (!stopped) {
-      try { await sweepOnce(); } catch (err) { logger.error({ err }, 'sweeper error'); }
+      try {
+        await sweepOnce();
+      } catch (err) {
+        logger.error({ err }, 'sweeper error');
+      }
       await new Promise((r) => setTimeout(r, intervalMs));
     }
   };
   const done = loop();
-  return async () => { stopped = true; await done; };
+  return async () => {
+    stopped = true;
+    await done;
+  };
 }
 
 module.exports = { startSweeper, sweepOnce };

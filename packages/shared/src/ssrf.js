@@ -21,24 +21,26 @@ function parseV4(ip) {
   return nums;
 }
 
-function inRange(n, lo, hi) { return n >= lo && n <= hi; }
+function inRange(n, lo, hi) {
+  return n >= lo && n <= hi;
+}
 
 // Is this a single IPv4 address in a range we must never dial?
 function isBlockedV4([a, b]) {
-  if (a === 0) return true;                                    // 0.0.0.0/8 "this host"
-  if (a === 10) return true;                                   // private
-  if (a === 127) return true;                                  // loopback
-  if (a === 169 && b === 254) return true;                     // link-local (cloud metadata lives here)
-  if (a === 172 && inRange(b, 16, 31)) return true;            // private
-  if (a === 192 && b === 168) return true;                     // private
-  if (a === 192 && b === 0) return true;                       // 192.0.0.0/24 + TEST-NET-1
-  if (a === 192 && b === 88) return true;                      // 6to4 relay (deprecated)
-  if (a === 192 && b === 2) return true;                       // TEST-NET-1
-  if (a === 198 && (b === 18 || b === 19)) return true;        // benchmarking
-  if (a === 198 && b === 51) return true;                      // TEST-NET-2
-  if (a === 203 && b === 0) return true;                       // TEST-NET-3
-  if (a === 100 && inRange(b, 64, 127)) return true;           // CGNAT shared space
-  if (a >= 224) return true;                                   // multicast + reserved (240/4)
+  if (a === 0) return true; // 0.0.0.0/8 "this host"
+  if (a === 10) return true; // private
+  if (a === 127) return true; // loopback
+  if (a === 169 && b === 254) return true; // link-local (cloud metadata lives here)
+  if (a === 172 && inRange(b, 16, 31)) return true; // private
+  if (a === 192 && b === 168) return true; // private
+  if (a === 192 && b === 0) return true; // 192.0.0.0/24 + TEST-NET-1
+  if (a === 192 && b === 88) return true; // 6to4 relay (deprecated)
+  if (a === 192 && b === 2) return true; // TEST-NET-1
+  if (a === 198 && (b === 18 || b === 19)) return true; // benchmarking
+  if (a === 198 && b === 51) return true; // TEST-NET-2
+  if (a === 203 && b === 0) return true; // TEST-NET-3
+  if (a === 100 && inRange(b, 64, 127)) return true; // CGNAT shared space
+  if (a >= 224) return true; // multicast + reserved (240/4)
   return false;
 }
 
@@ -53,13 +55,14 @@ function isBlockedV6(ipLower) {
     const v4 = parseV4(mapped[1]);
     return v4 ? isBlockedV4(v4) : true;
   }
-  if (ip === '::' || ip === '::1') return true;                // unspecified / loopback
-  if (ip.startsWith('fe8') || ip.startsWith('fe9') || ip.startsWith('fea') || ip.startsWith('feb')) return true; // fe80::/10 link-local
+  if (ip === '::' || ip === '::1') return true; // unspecified / loopback
+  if (ip.startsWith('fe8') || ip.startsWith('fe9') || ip.startsWith('fea') || ip.startsWith('feb'))
+    return true; // fe80::/10 link-local
   if (ip.startsWith('fc') || ip.startsWith('fd')) return true; // fc00::/7 unique-local
-  if (ip.startsWith('ff')) return true;                        // multicast
-  if (ip.startsWith('2001:db8:')) return true;                 // documentation
-  if (ip.startsWith('64:ff9b:')) return true;                  // NAT64 well-known prefix
-  if (ip.startsWith('::ffff:')) return true;                   // any other mapped form → fail closed
+  if (ip.startsWith('ff')) return true; // multicast
+  if (ip.startsWith('2001:db8:')) return true; // documentation
+  if (ip.startsWith('64:ff9b:')) return true; // NAT64 well-known prefix
+  if (ip.startsWith('::ffff:')) return true; // any other mapped form → fail closed
   // Everything else (global unicast etc.) is allowed through.
   return false;
 }
@@ -80,10 +83,7 @@ async function resolveAllAddresses(hostname) {
   // resolve4/resolve6 each throw on ENOTFOUND etc. — let those bubble up so
   // the caller can classify them (a DNS failure is retryable, a blocked
   // address is terminal — different handling downstream).
-  const [v4, v6] = await Promise.allSettled([
-    dns.resolve4(hostname),
-    dns.resolve6(hostname),
-  ]);
+  const [v4, v6] = await Promise.allSettled([dns.resolve4(hostname), dns.resolve6(hostname)]);
   if (v4.status === 'fulfilled') results.push(...v4.value);
   if (v6.status === 'fulfilled') results.push(...v6.value);
   if (results.length === 0) {
@@ -177,12 +177,19 @@ function pinnedLookup(hostname, addresses) {
     const first = addresses[0];
     const family = net.isIPv6(first) ? 6 : 4;
     if (options.all) {
-      return callback(null, addresses.map((address) => ({ address, family: net.isIPv6(address) ? 6 : 4 })));
+      return callback(
+        null,
+        addresses.map((address) => ({ address, family: net.isIPv6(address) ? 6 : 4 })),
+      );
     }
     return callback(null, first, family);
   };
 }
 
 module.exports = {
-  SsrfError, isBlockedIp, resolveAllAddresses, validateEndpointUrl, pinnedLookup,
+  SsrfError,
+  isBlockedIp,
+  resolveAllAddresses,
+  validateEndpointUrl,
+  pinnedLookup,
 };

@@ -35,7 +35,7 @@ async function claimDelivery(deliveryId) {
        RETURNING id
      )
      SELECT c.*, a.id AS attempt_id FROM claimed c JOIN attempt a ON true`,
-    [deliveryId, lockToken, config.leaseMs, attemptId]
+    [deliveryId, lockToken, config.leaseMs, attemptId],
   );
   return rows[0] || null;
 }
@@ -50,14 +50,25 @@ async function loadContext(deliveryId) {
      JOIN events ev ON ev.id = d.event_id
      JOIN endpoints ep ON ep.id = d.endpoint_id
      WHERE d.id = $1`,
-    [deliveryId]
+    [deliveryId],
   );
   return rows[0] || null;
 }
 
 // Finalize under our lock token. If the UPDATE hits 0 rows we lost the lease —
 // a stale worker must not write anything (no state change, no retry outbox).
-async function finalize({ deliveryId, attemptId, lockToken, outcome, httpStatus, responseBody, truncated, responseTimeMs, errorMessage, retryAfterHeader, ctx }) {
+async function finalize({
+  deliveryId,
+  attemptId,
+  lockToken,
+  outcome,
+  httpStatus,
+  responseBody,
+  responseTimeMs,
+  errorMessage,
+  retryAfterHeader,
+  ctx,
+}) {
   const attemptStatus = outcome; // succeeded | retryable_failure | terminal_failure
   const maxAttempts = ctx.max_attempts || config.maxAttempts;
   const attemptCount = ctx.attempt_count; // already incremented at claim
@@ -73,7 +84,9 @@ async function finalize({ deliveryId, attemptId, lockToken, outcome, httpStatus,
     succeededAt = new Date();
   } else if (outcome === 'retryable_failure' && attemptCount < maxAttempts) {
     const delayMs = nextAttemptDelayMs(attemptCount, retryAfterHeader, {
-      baseDelayMs: config.baseDelayMs, multiplier: config.multiplier, maxDelayMs: config.maxDelayMs,
+      baseDelayMs: config.baseDelayMs,
+      multiplier: config.multiplier,
+      maxDelayMs: config.maxDelayMs,
     });
     nextAttemptAt = new Date(Date.now() + delayMs);
     nextStatus = 'retrying';
@@ -91,8 +104,16 @@ async function finalize({ deliveryId, attemptId, lockToken, outcome, httpStatus,
            lock_token = NULL, locked_until = NULL, updated_at = NOW()
        WHERE id = $1 AND lock_token = $8
        RETURNING id`,
-      [deliveryId, nextStatus, httpStatus ?? null, errorMessage ?? null, nextAttemptAt,
-       succeededAt, deadLetteredAt, lockToken]
+      [
+        deliveryId,
+        nextStatus,
+        httpStatus ?? null,
+        errorMessage ?? null,
+        nextAttemptAt,
+        succeededAt,
+        deadLetteredAt,
+        lockToken,
+      ],
     );
     if (!rows.length) {
       // Stale worker: someone else owns this delivery now. Roll back (nothing
@@ -106,7 +127,14 @@ async function finalize({ deliveryId, attemptId, lockToken, outcome, httpStatus,
        SET status = $2, response_status = $3, response_body = $4,
            response_time_ms = $5, error_message = $6, completed_at = NOW()
        WHERE id = $1 AND status = 'in_progress'`,
-      [attemptId, attemptStatus, httpStatus ?? null, responseBody ?? null, responseTimeMs ?? null, errorMessage ?? null]
+      [
+        attemptId,
+        attemptStatus,
+        httpStatus ?? null,
+        responseBody ?? null,
+        responseTimeMs ?? null,
+        errorMessage ?? null,
+      ],
     );
 
     if (enqueueRetry) {
@@ -115,7 +143,7 @@ async function finalize({ deliveryId, attemptId, lockToken, outcome, httpStatus,
       await client.query(
         `INSERT INTO outbox_messages (id, message_type, aggregate_id, available_at)
          VALUES ($1, 'delivery.retry', $2, $3)`,
-        [crypto.randomUUID(), deliveryId, nextAttemptAt]
+        [crypto.randomUUID(), deliveryId, nextAttemptAt],
       );
     }
     return { stale: false, status: nextStatus };
@@ -135,8 +163,12 @@ async function processDelivery(deliveryId) {
   // the operator already switched off.
   if (!ctx.is_active || ctx.deleted_at) {
     await finalize({
-      deliveryId, attemptId: claimed.attempt_id, lockToken: claimed.lock_token,
-      outcome: 'terminal_failure', errorMessage: 'endpoint_inactive', ctx,
+      deliveryId,
+      attemptId: claimed.attempt_id,
+      lockToken: claimed.lock_token,
+      outcome: 'terminal_failure',
+      errorMessage: 'endpoint_inactive',
+      ctx,
     });
     return { status: 'failed' };
   }
@@ -151,9 +183,12 @@ async function processDelivery(deliveryId) {
     const isSsrf = err.code === 'SSRF_BLOCKED';
     log.warn({ err: err.message }, 'endpoint URL failed SSRF validation at delivery time');
     await finalize({
-      deliveryId, attemptId: claimed.attempt_id, lockToken: claimed.lock_token,
+      deliveryId,
+      attemptId: claimed.attempt_id,
+      lockToken: claimed.lock_token,
       outcome: isSsrf ? 'terminal_failure' : 'retryable_failure',
-      errorMessage: `ssrf_validation: ${err.message}`, ctx,
+      errorMessage: `ssrf_validation: ${err.message}`,
+      ctx,
     });
     return { status: isSsrf ? 'failed' : 'retrying' };
   }
@@ -171,8 +206,12 @@ async function processDelivery(deliveryId) {
   } catch (err) {
     log.error({ err }, 'could not decrypt signing secret');
     await finalize({
-      deliveryId, attemptId: claimed.attempt_id, lockToken: claimed.lock_token,
-      outcome: 'terminal_failure', errorMessage: 'signing_secret_decrypt_failed', ctx,
+      deliveryId,
+      attemptId: claimed.attempt_id,
+      lockToken: claimed.lock_token,
+      outcome: 'terminal_failure',
+      errorMessage: 'signing_secret_decrypt_failed',
+      ctx,
     });
     return { status: 'failed' };
   }
@@ -191,7 +230,9 @@ async function processDelivery(deliveryId) {
   let result;
   try {
     result = await postWebhook({
-      url: ctx.url, headers, body: rawBody,
+      url: ctx.url,
+      headers,
+      body: rawBody,
       timeoutMs: ctx.timeout_ms,
       lookup: pinnedLookup(new URL(ctx.url).hostname, addresses),
       maxResponseBytes: config.maxResponseBytes,
@@ -199,8 +240,12 @@ async function processDelivery(deliveryId) {
   } catch (err) {
     const outcome = classifyOutcome({ error: err });
     await finalize({
-      deliveryId, attemptId: claimed.attempt_id, lockToken: claimed.lock_token,
-      outcome, errorMessage: String(err.message || err).slice(0, 2000), ctx,
+      deliveryId,
+      attemptId: claimed.attempt_id,
+      lockToken: claimed.lock_token,
+      outcome,
+      errorMessage: String(err.message || err).slice(0, 2000),
+      ctx,
     });
     return { status: outcome === 'retryable_failure' ? 'retrying' : 'failed' };
   }
@@ -208,12 +253,16 @@ async function processDelivery(deliveryId) {
   const outcome = classifyOutcome({ httpStatus: result.status });
   const errorMessage = result.truncated
     ? 'response body truncated at cap'
-    : (outcome === 'succeeded' ? null : `HTTP ${result.status}`);
+    : outcome === 'succeeded'
+      ? null
+      : `HTTP ${result.status}`;
   await finalize({
-    deliveryId, attemptId: claimed.attempt_id, lockToken: claimed.lock_token,
-    outcome, httpStatus: result.status,
+    deliveryId,
+    attemptId: claimed.attempt_id,
+    lockToken: claimed.lock_token,
+    outcome,
+    httpStatus: result.status,
     responseBody: result.body ? result.body.slice(0, 8192) : null,
-    truncated: result.truncated,
     responseTimeMs: result.responseTimeMs,
     errorMessage,
     retryAfterHeader: result.headers?.['retry-after'],

@@ -22,7 +22,11 @@ function verifyApiKeyHash(rawKey, storedHex) {
   if (typeof rawKey !== 'string' || typeof storedHex !== 'string') return false;
   const a = Buffer.from(hashApiKey(rawKey), 'hex');
   let b;
-  try { b = Buffer.from(storedHex, 'hex'); } catch { return false; }
+  try {
+    b = Buffer.from(storedHex, 'hex');
+  } catch {
+    return false;
+  }
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
 }
@@ -57,30 +61,35 @@ function decryptSecret(stored) {
   if (!ivB64 || !tagB64 || !dataB64) throw new Error('Malformed encrypted secret');
   const decipher = crypto.createDecipheriv(ALGO, key, Buffer.from(ivB64, 'base64'));
   decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
-  return Buffer.concat([
-    decipher.update(Buffer.from(dataB64, 'base64')),
-    decipher.final(),
-  ]).toString('utf8');
+  return Buffer.concat([decipher.update(Buffer.from(dataB64, 'base64')), decipher.final()]).toString('utf8');
 }
 
 // The exact signing contract from plan.md §7.5:
 // HMAC-SHA256(secret, timestamp + "." + rawBody)
 function signPayload(secret, timestamp, rawBody) {
-  return crypto.createHmac('sha256', secret)
-    .update(`${timestamp}.${rawBody}`)
-    .digest('hex');
+  return crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
 }
 
 function verifySignature(secret, timestamp, rawBody, signatureHex) {
   const expected = signPayload(secret, timestamp, rawBody);
   const a = Buffer.from(expected, 'hex');
   let b;
-  try { b = Buffer.from(signatureHex, 'hex'); } catch { return false; }
+  try {
+    b = Buffer.from(signatureHex, 'hex');
+  } catch {
+    return false;
+  }
   if (a.length !== b.length) return false;
   return crypto.timingSafeEqual(a, b);
 }
 
 module.exports = {
-  hashApiKey, verifyApiKeyHash, generateApiKey, generateSigningSecret,
-  encryptSecret, decryptSecret, signPayload, verifySignature,
+  hashApiKey,
+  verifyApiKeyHash,
+  generateApiKey,
+  generateSigningSecret,
+  encryptSecret,
+  decryptSecret,
+  signPayload,
+  verifySignature,
 };

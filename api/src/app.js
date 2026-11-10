@@ -1,9 +1,9 @@
 const express = require('express');
-const helmet = require('helmet');
+const helmet = require('helmet'); //security headers
 const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const pinoHttp = require('pino-http');
-const crypto = require('node:crypto');
+const rateLimit = require('express-rate-limit'); //1000/min
+const pinoHttp = require('pino-http'); //structured logs
+const crypto = require('node:crypto'); //ids, signatures
 
 const logger = require('./lib/logger');
 const env = require('./config/env');

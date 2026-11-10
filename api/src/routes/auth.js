@@ -16,7 +16,7 @@ router.post('/register', validate(registerSchema), async (req, res, next) => {
       const { rows } = await query(
         `INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)
          RETURNING id, name, email, created_at`,
-        [name, email.toLowerCase(), passwordHash]
+        [name, email.toLowerCase(), passwordHash],
       );
       const user = rows[0];
       return res.status(201).json({ user, token: signJwt(user) });
@@ -24,7 +24,9 @@ router.post('/register', validate(registerSchema), async (req, res, next) => {
       if (err.code === '23505') return next(httpError(409, 'CONFLICT', 'Email already registered'));
       throw err;
     }
-  } catch (err) { return next(err); }
+  } catch (err) {
+    return next(err);
+  }
 });
 
 router.post('/login', validate(loginSchema), async (req, res, next) => {
@@ -37,7 +39,9 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
     if (!ok) return next(httpError(401, 'UNAUTHORIZED', 'Invalid email or password'));
     const safe = { id: user.id, name: user.name, email: user.email, created_at: user.created_at };
     return res.json({ user: safe, token: signJwt(safe) });
-  } catch (err) { return next(err); }
+  } catch (err) {
+    return next(err);
+  }
 });
 
 module.exports = router;

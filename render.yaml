@@ -33,11 +33,11 @@ services:
       - key: PORT
         value: 4000
       - key: RUN_BACKGROUND
-        value: "true"
+        value: 'true'
       - key: LOG_LEVEL
         value: info
       - key: CLIENT_URL
-        sync: false  # your Vercel URL, set after frontend deploy
+        sync: false # your Vercel URL, set after frontend deploy
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL
@@ -45,4 +45,4 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: ENCRYPTION_KEY
-        sync: false  # same process signs + verifies, so just needs to be set
+        sync: false # same process signs + verifies, so just needs to be set

@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Caveat:wght@600&display=swap');
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* EventRelay ops console theme (from Stitch design system):
    Inter for UI, JetBrains Mono for telemetry/IDs, hairline borders,
    semantic status tokens, indigo primary on slate. */
 @theme {
-  --font-sans: "Inter", ui-sans-system, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: 'Inter', ui-sans-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 body {
@@ -14,17 +14,19 @@ body {
   font-family: var(--font-sans);
 }
 
-.font-mono, code, kbd {
+.font-mono,
+code,
+kbd {
   font-family: var(--font-mono);
 }
 
 /* Human-designed touches: editorial serif for display type, handwriting
    for annotations, warm selection colour, and a faint drafting grid. */
 .font-display {
-  font-family: "Instrument Serif", Georgia, serif;
+  font-family: 'Instrument Serif', Georgia, serif;
 }
 .font-hand {
-  font-family: "Caveat", cursive;
+  font-family: 'Caveat', cursive;
 }
 ::selection {
   background: #a7f3d0;
@@ -50,7 +52,9 @@ html {
 .reveal {
   opacity: 0;
   transform: translateY(18px);
-  transition: opacity 0.65s ease, transform 0.65s ease;
+  transition:
+    opacity 0.65s ease,
+    transform 0.65s ease;
 }
 .reveal.is-visible {
   opacity: 1;
@@ -58,24 +62,39 @@ html {
 }
 
 @keyframes log-in {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .log-item {
   animation: log-in 0.5s ease both;
 }
 
 @keyframes caret-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 .caret-blink {
   animation: caret-blink 1.1s steps(1) infinite;
 }
 
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 .marquee-track {
   animation: marquee 28s linear infinite;
@@ -85,7 +104,17 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
-  .log-item, .marquee-track, .caret-blink { animation: none; }
-  html { scroll-behavior: auto; }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .log-item,
+  .marquee-track,
+  .caret-blink {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
 }

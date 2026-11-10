@@ -14,8 +14,12 @@ describe('crypto: api keys', () => {
 
 describe('crypto: AES-256-GCM secrets', () => {
   const prev = process.env.ENCRYPTION_KEY;
-  beforeAll(() => { process.env.ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64'); });
-  afterAll(() => { process.env.ENCRYPTION_KEY = prev; });
+  beforeAll(() => {
+    process.env.ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64');
+  });
+  afterAll(() => {
+    process.env.ENCRYPTION_KEY = prev;
+  });
 
   it('round-trips and produces different ciphertext each time', () => {
     const a = crypto.encryptSecret('shh-secret');
@@ -70,10 +74,24 @@ describe('classify', () => {
 
 describe('ssrf: blocked ranges', () => {
   const blocked = [
-    '127.0.0.1', '10.0.0.5', '172.16.0.1', '172.31.255.1', '192.168.1.1',
-    '169.254.169.254', '0.0.0.0', '224.0.0.1', '198.18.0.1', '100.64.0.1',
-    '::1', '::', 'fe80::1', 'fc00::1', 'fd12::1', 'ff02::1',
-    '::ffff:127.0.0.1', '::ffff:10.0.0.1', // IPv4-mapped IPv6
+    '127.0.0.1',
+    '10.0.0.5',
+    '172.16.0.1',
+    '172.31.255.1',
+    '192.168.1.1',
+    '169.254.169.254',
+    '0.0.0.0',
+    '224.0.0.1',
+    '198.18.0.1',
+    '100.64.0.1',
+    '::1',
+    '::',
+    'fe80::1',
+    'fc00::1',
+    'fd12::1',
+    'ff02::1',
+    '::ffff:127.0.0.1',
+    '::ffff:10.0.0.1', // IPv4-mapped IPv6
   ];
   it.each(blocked)('blocks %s', (ip) => {
     expect(ssrf.isBlockedIp(ip)).toBe(true);
@@ -87,10 +105,12 @@ describe('ssrf: blocked ranges', () => {
 
 describe('ssrf: validate + pinned lookup', () => {
   it('rejects private IP literals without any DNS call', async () => {
-    await expect(ssrf.validateEndpointUrl('http://127.0.0.1/hook', { allowLocal: false }))
-      .rejects.toMatchObject({ code: 'SSRF_BLOCKED' });
-    await expect(ssrf.validateEndpointUrl('http://[::ffff:127.0.0.1]/hook', { allowLocal: false }))
-      .rejects.toMatchObject({ code: 'SSRF_BLOCKED' });
+    await expect(
+      ssrf.validateEndpointUrl('http://127.0.0.1/hook', { allowLocal: false }),
+    ).rejects.toMatchObject({ code: 'SSRF_BLOCKED' });
+    await expect(
+      ssrf.validateEndpointUrl('http://[::ffff:127.0.0.1]/hook', { allowLocal: false }),
+    ).rejects.toMatchObject({ code: 'SSRF_BLOCKED' });
   });
 
   it('allows public IP literals', async () => {

@@ -8,15 +8,18 @@ const env = require('../config/env');
 async function findExistingByIdempotency(userId, idempotencyKey) {
   const { rows } = await query(
     `SELECT id, event_type FROM events WHERE user_id = $1 AND idempotency_key = $2`,
-    [userId, idempotencyKey]
+    [userId, idempotencyKey],
   );
   if (!rows[0]) return null;
   const eventId = rows[0].id;
-  const { rows: d } = await query(
-    'SELECT COUNT(*)::int AS n FROM deliveries WHERE event_id = $1',
-    [eventId]
-  );
-  return { eventId, type: rows[0].event_type, status: 'accepted', deliveriesCreated: d[0].n, deduplicated: true };
+  const { rows: d } = await query('SELECT COUNT(*)::int AS n FROM deliveries WHERE event_id = $1', [eventId]);
+  return {
+    eventId,
+    type: rows[0].event_type,
+    status: 'accepted',
+    deliveriesCreated: d[0].n,
+    deduplicated: true,
+  };
 }
 
 async function ingestEvent({ userId, type, data, idempotencyKey }) {
@@ -38,15 +41,21 @@ async function ingestEvent({ userId, type, data, idempotencyKey }) {
       if (idempotencyKey) {
         const { rows } = await client.query(
           'SELECT id, event_type FROM events WHERE user_id = $1 AND idempotency_key = $2 FOR UPDATE',
-          [userId, idempotencyKey]
+          [userId, idempotencyKey],
         );
         if (rows[0]) {
           // Lost a race: someone else committed first. Reuse their event.
           const { rows: d } = await client.query(
             'SELECT COUNT(*)::int AS n FROM deliveries WHERE event_id = $1',
-            [rows[0].id]
+            [rows[0].id],
           );
-          return { eventId: rows[0].id, type: rows[0].event_type, status: 'accepted', deliveriesCreated: d[0].n, deduplicated: true };
+          return {
+            eventId: rows[0].id,
+            type: rows[0].event_type,
+            status: 'accepted',
+            deliveriesCreated: d[0].n,
+            deduplicated: true,
+          };
         }
       }
 
@@ -54,14 +63,14 @@ async function ingestEvent({ userId, type, data, idempotencyKey }) {
       await client.query(
         `INSERT INTO events (id, user_id, idempotency_key, event_type, payload)
          VALUES ($1, $2, $3, $4, $5::jsonb)`,
-        [eventId, userId, idempotencyKey || null, type, serialized]
+        [eventId, userId, idempotencyKey || null, type, serialized],
       );
 
       const { rows: endpoints } = await client.query(
         `SELECT e.id FROM endpoints e
          JOIN endpoint_event_types eet ON eet.endpoint_id = e.id
          WHERE e.user_id = $1 AND e.is_active AND e.deleted_at IS NULL AND eet.event_type = $2`,
-        [userId, type]
+        [userId, type],
       );
 
       let deliveriesCreated = 0;
@@ -70,14 +79,14 @@ async function ingestEvent({ userId, type, data, idempotencyKey }) {
         const { rows: inserted } = await client.query(
           `INSERT INTO deliveries (id, event_id, endpoint_id, status)
            VALUES ($1, $2, $3, 'pending') ON CONFLICT DO NOTHING RETURNING id`,
-          [deliveryId, eventId, ep.id]
+          [deliveryId, eventId, ep.id],
         );
         if (!inserted.length) continue;
         deliveriesCreated += 1;
         await client.query(
           `INSERT INTO outbox_messages (id, message_type, aggregate_id, available_at)
            VALUES ($1, 'delivery.created', $2, NOW())`,
-          [crypto.randomUUID(), inserted[0].id]
+          [crypto.randomUUID(), inserted[0].id],
         );
       }
 

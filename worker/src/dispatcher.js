@@ -18,7 +18,7 @@ async function claimDue() {
          AND (locked_until IS NULL OR locked_until < NOW())
        ORDER BY available_at, created_at LIMIT $1
        FOR UPDATE SKIP LOCKED`,
-      [BATCH]
+      [BATCH],
     );
     if (!due.length) return [];
     const ids = due.map((r) => r.id);
@@ -27,7 +27,7 @@ async function claimDue() {
        SET locked_until = NOW() + make_interval(secs => $2 / 1000.0),
            lock_token = $3, attempts = attempts + 1
        WHERE id = ANY($1::uuid[])`,
-      [ids, LEASE_MS, token]
+      [ids, LEASE_MS, token],
     );
     return due;
   });
@@ -38,16 +38,20 @@ async function runOnce(queue) {
   const { rows, token } = await claimDue();
   for (const msg of rows) {
     try {
-      await queue.add('deliver', { deliveryId: msg.aggregate_id, outboxId: msg.id }, {
-        jobId: `outbox_${msg.id}`, // same row ⇒ same id ⇒ BullMQ dedupes re-publishes
-      });
+      await queue.add(
+        'deliver',
+        { deliveryId: msg.aggregate_id, outboxId: msg.id },
+        {
+          jobId: `outbox_${msg.id}`, // same row ⇒ same id ⇒ BullMQ dedupes re-publishes
+        },
+      );
       // Guarded mark: if our lease expired mid-flight, another dispatcher
       // owns this row — marking it published would be a lie.
       const { rowCount } = await query(
         `UPDATE outbox_messages
          SET published_at = NOW(), lock_token = NULL, locked_until = NULL
          WHERE id = $1 AND lock_token = $2 AND locked_until > NOW()`,
-        [msg.id, token]
+        [msg.id, token],
       );
       if (!rowCount) logger.warn({ outboxId: msg.id }, 'lost outbox lease before marking published');
     } catch (err) {
@@ -55,7 +59,7 @@ async function runOnce(queue) {
       logger.error({ err, outboxId: msg.id }, 'failed to enqueue outbox message');
       await query(
         'UPDATE outbox_messages SET lock_token = NULL, locked_until = NULL WHERE id = $1 AND lock_token = $2',
-        [msg.id, token]
+        [msg.id, token],
       ).catch(() => {});
     }
   }
@@ -78,7 +82,11 @@ async function startDispatcher() {
     }
   };
   const done = loop();
-  return async () => { stopped = true; await done; await queue.close(); };
+  return async () => {
+    stopped = true;
+    await done;
+    await queue.close();
+  };
 }
 
 module.exports = { startDispatcher, runOnce };

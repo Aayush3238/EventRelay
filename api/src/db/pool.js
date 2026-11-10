@@ -16,7 +16,11 @@ async function withTransaction(fn) {
     await client.query('COMMIT');
     return result;
   } catch (err) {
-    try { await client.query('ROLLBACK'); } catch { /* already dead */ }
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      /* already dead */
+    }
     throw err;
   } finally {
     client.release();

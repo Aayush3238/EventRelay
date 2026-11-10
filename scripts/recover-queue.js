@@ -24,10 +24,13 @@ async function main() {
      WHERE ${ELIGIBLE}
        AND NOT EXISTS (SELECT 1 FROM outbox_messages o
                        WHERE o.aggregate_id = d.id AND o.published_at IS NULL)
-     GROUP BY d.status`
+     GROUP BY d.status`,
   );
   console.log('eligible deliveries:', counts);
-  if (dryRun) { console.log('[dry-run] nothing written'); return; }
+  if (dryRun) {
+    console.log('[dry-run] nothing written');
+    return;
+  }
 
   let total = 0;
   for (;;) {
@@ -40,26 +43,29 @@ async function main() {
            AND NOT EXISTS (SELECT 1 FROM outbox_messages o
                            WHERE o.aggregate_id = d.id AND o.published_at IS NULL)
          ORDER BY d.created_at LIMIT 500
-         FOR UPDATE OF d SKIP LOCKED`
+         FOR UPDATE OF d SKIP LOCKED`,
       );
-      if (!rows.length) { await client.query('COMMIT'); break; }
+      if (!rows.length) {
+        await client.query('COMMIT');
+        break;
+      }
       for (const r of rows) {
         // Expired-processing deliveries may have a stranded in_progress attempt.
         await client.query(
           `UPDATE delivery_attempts SET status = 'worker_lost',
              error_message = 'lease_expired', completed_at = NOW()
            WHERE delivery_id = $1 AND status = 'in_progress'`,
-          [r.id]
+          [r.id],
         );
         await client.query(
           `UPDATE deliveries SET lock_token = NULL, locked_until = NULL, updated_at = NOW()
            WHERE id = $1`,
-          [r.id]
+          [r.id],
         );
         await client.query(
           `INSERT INTO outbox_messages (id, message_type, aggregate_id, available_at)
            VALUES ($1, 'delivery.recovery', $2, NOW())`,
-          [crypto.randomUUID(), r.id]
+          [crypto.randomUUID(), r.id],
         );
       }
       await client.query('COMMIT');
@@ -75,4 +81,10 @@ async function main() {
   console.log(`done. re-enqueued ${total} deliveries`);
 }
 
-main().then(() => pool.end()).catch((err) => { console.error(err); pool.end(); process.exit(1); });
+main()
+  .then(() => pool.end())
+  .catch((err) => {
+    console.error(err);
+    pool.end();
+    process.exit(1);
+  });

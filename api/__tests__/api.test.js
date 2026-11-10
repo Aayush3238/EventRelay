@@ -34,33 +34,41 @@ const describeDb = process.env.DATABASE_URL ? describe : describe.skip;
 describeDb('integration (real Postgres)', () => {
   const { pool } = require('../src/db/pool');
 
-  afterAll(async () => { await pool.end(); });
+  afterAll(async () => {
+    await pool.end();
+  });
 
   it('register → create api key → ingest → replay flow', async () => {
     const email = `t${Date.now()}@example.com`;
-    const reg = await request(app).post('/auth/register')
+    const reg = await request(app)
+      .post('/auth/register')
       .send({ name: 'Tester', email, password: 'password-123' });
     expect(reg.status).toBe(201);
     const token = reg.body.token;
 
-    const keyRes = await request(app).post('/api-keys')
-      .set('Authorization', `Bearer ${token}`).send({ name: 'test' });
+    const keyRes = await request(app)
+      .post('/api-keys')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'test' });
     expect(keyRes.status).toBe(201);
     expect(keyRes.body.rawKey.startsWith('er_live_')).toBe(true);
 
     // No endpoints subscribed → accepted with 0 deliveries, no crash.
-    const ingest = await request(app).post('/v1/events')
+    const ingest = await request(app)
+      .post('/v1/events')
       .set('X-API-Key', keyRes.body.rawKey)
       .send({ type: 'order.created', data: { orderId: 'ORD-1' } });
     expect([200, 202]).toContain(ingest.status);
     expect(ingest.body.deliveriesCreated).toBe(0);
 
     // Same idempotency key twice → same event, deduplicated.
-    const again = await request(app).post('/v1/events')
+    const again = await request(app)
+      .post('/v1/events')
       .set('X-API-Key', keyRes.body.rawKey)
       .set('Idempotency-Key', 'same-key')
       .send({ type: 'order.created', data: { orderId: 'ORD-1' } });
-    const again2 = await request(app).post('/v1/events')
+    const again2 = await request(app)
+      .post('/v1/events')
       .set('X-API-Key', keyRes.body.rawKey)
       .set('Idempotency-Key', 'same-key')
       .send({ type: 'order.created', data: { orderId: 'ORD-1' } });

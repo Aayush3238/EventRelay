@@ -43,19 +43,19 @@ Developers register webhook endpoints + subscribe them to event types. Producers
 
 ### 1.2 Scenario Coverage (Acceptance Criteria)
 
-| Scenario | Handling |
-|---|---|
-| Receiver temporarily unavailable / 500 / timeout | Retryable → exponential backoff + jitter, up to `max_attempts` |
-| Producer retries / double-submit | `Idempotency-Key` → unique `(user_id, idempotency_key)`; return existing event, create no duplicates |
-| Receiver gets same delivery twice | Expected under at-least-once; receivers dedupe on `X-EventRelay-Delivery-Id` / `X-EventRelay-Event-Id`; document this |
-| Redis unavailable at ingest time | Event + deliveries + outbox rows already committed in Postgres; dispatcher publishes later |
-| Redis wiped **after** successful publication | Explicit recovery command (§6.4) republishes eligible `pending`/`retrying`/expired-`processing` deliveries as new outbox rows; delivery/attempt history untouched |
-| Worker crashes mid-delivery | `processing` lease (`locked_until` + `lock_token`) expires → sweeper finalizes abandoned attempt as `worker_lost` (§7.2) → delivery becomes claimable; no transaction held during HTTP call |
-| Thousands of events at once | Stateless API, pooled `pg`, BullMQ concurrency + rate limiting, `SKIP LOCKED` claiming |
-| Replay of failed delivery | `POST /v1/deliveries/:id/replay` (**failed-only in v1**) → new attempt cycle, reset `attempt_count`, preserve history (§8.5) |
-| 4xx from receiver | Terminal `failed` (configurable), no silent retry storm |
-| SSRF via DNS / redirect to private IP | Hostname resolved and **every** IPv4/IPv6 address validated at endpoint save **and** at delivery time with a pinned lookup (§10.1) |
-| Worker crashes after sending webhook but before finalizing DB | Attempt remains `in_progress`; sweeper finalizes it as `worker_lost` (§7.2). A duplicate delivery may follow — at-least-once requires receiver dedupe (§7.6) |
+| Scenario                                                      | Handling                                                                                                                                                                                    |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Receiver temporarily unavailable / 500 / timeout              | Retryable → exponential backoff + jitter, up to `max_attempts`                                                                                                                              |
+| Producer retries / double-submit                              | `Idempotency-Key` → unique `(user_id, idempotency_key)`; return existing event, create no duplicates                                                                                        |
+| Receiver gets same delivery twice                             | Expected under at-least-once; receivers dedupe on `X-EventRelay-Delivery-Id` / `X-EventRelay-Event-Id`; document this                                                                       |
+| Redis unavailable at ingest time                              | Event + deliveries + outbox rows already committed in Postgres; dispatcher publishes later                                                                                                  |
+| Redis wiped **after** successful publication                  | Explicit recovery command (§6.4) republishes eligible `pending`/`retrying`/expired-`processing` deliveries as new outbox rows; delivery/attempt history untouched                           |
+| Worker crashes mid-delivery                                   | `processing` lease (`locked_until` + `lock_token`) expires → sweeper finalizes abandoned attempt as `worker_lost` (§7.2) → delivery becomes claimable; no transaction held during HTTP call |
+| Thousands of events at once                                   | Stateless API, pooled `pg`, BullMQ concurrency + rate limiting, `SKIP LOCKED` claiming                                                                                                      |
+| Replay of failed delivery                                     | `POST /v1/deliveries/:id/replay` (**failed-only in v1**) → new attempt cycle, reset `attempt_count`, preserve history (§8.5)                                                                |
+| 4xx from receiver                                             | Terminal `failed` (configurable), no silent retry storm                                                                                                                                     |
+| SSRF via DNS / redirect to private IP                         | Hostname resolved and **every** IPv4/IPv6 address validated at endpoint save **and** at delivery time with a pinned lookup (§10.1)                                                          |
+| Worker crashes after sending webhook but before finalizing DB | Attempt remains `in_progress`; sweeper finalizes it as `worker_lost` (§7.2). A duplicate delivery may follow — at-least-once requires receiver dedupe (§7.6)                                |
 
 ### 1.3 Explicit Non-Claims
 
@@ -70,34 +70,34 @@ Developers register webhook endpoints + subscribe them to event types. Producers
 
 ### 2.1 Backend / Worker
 
-| Package | Purpose | Notes |
-|---|---|---|
-| `express` ^5.1 | HTTP API | Current stable major; only web framework |
-| `pg` ^8.13 | Postgres client | `Pool` + explicit transactions; no ORM |
-| `bullmq` ^5.58 | Queue (immediate-execution jobs; **no BullMQ `delay`** — Postgres `available_at` is authoritative, §6.3) | Requires Redis ≥ 6; compatible with Node 22/24 |
-| `ioredis` ^5.7 | Redis client (BullMQ peer) | `maxRetriesPerRequest: null` for BullMQ |
-| `jsonwebtoken` ^9.0 | JWT auth | Access tokens for dashboard |
-| `bcryptjs` ^3.0 | **User password hashing only** (cost 12) | Pure JS, no native build. **Not** used for API keys (§10) |
-| `zod` ^3.25 | Request validation | All inputs; shared schemas where possible |
-| `pino` ^9.7 + `pino-http` ^10.5 | Structured logging | JSON in prod, pretty in dev; `requestId` propagation |
-| `helmet` ^8.0 | Security headers | |
-| `express-rate-limit` ^8.0 | Rate limiting | Per-IP + per-API-key |
-| `swagger-ui-express` ^5.0 | OpenAPI docs | Serve at `/docs`; spec in `openapi.yaml` |
-| `node:crypto` | HMAC-SHA256 signing, AES-256-GCM secret encryption, SHA-256 API-key hashing, `crypto.randomUUID()` / `randomBytes` | No extra dep |
-| `dotenv` ^17.0 | Env loading | |
-| `cors` ^2.8 | Dashboard CORS | Lock to frontend origin |
+| Package                         | Purpose                                                                                                            | Notes                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| `express` ^5.1                  | HTTP API                                                                                                           | Current stable major; only web framework                  |
+| `pg` ^8.13                      | Postgres client                                                                                                    | `Pool` + explicit transactions; no ORM                    |
+| `bullmq` ^5.58                  | Queue (immediate-execution jobs; **no BullMQ `delay`** — Postgres `available_at` is authoritative, §6.3)           | Requires Redis ≥ 6; compatible with Node 22/24            |
+| `ioredis` ^5.7                  | Redis client (BullMQ peer)                                                                                         | `maxRetriesPerRequest: null` for BullMQ                   |
+| `jsonwebtoken` ^9.0             | JWT auth                                                                                                           | Access tokens for dashboard                               |
+| `bcryptjs` ^3.0                 | **User password hashing only** (cost 12)                                                                           | Pure JS, no native build. **Not** used for API keys (§10) |
+| `zod` ^3.25                     | Request validation                                                                                                 | All inputs; shared schemas where possible                 |
+| `pino` ^9.7 + `pino-http` ^10.5 | Structured logging                                                                                                 | JSON in prod, pretty in dev; `requestId` propagation      |
+| `helmet` ^8.0                   | Security headers                                                                                                   |                                                           |
+| `express-rate-limit` ^8.0       | Rate limiting                                                                                                      | Per-IP + per-API-key                                      |
+| `swagger-ui-express` ^5.0       | OpenAPI docs                                                                                                       | Serve at `/docs`; spec in `openapi.yaml`                  |
+| `node:crypto`                   | HMAC-SHA256 signing, AES-256-GCM secret encryption, SHA-256 API-key hashing, `crypto.randomUUID()` / `randomBytes` | No extra dep                                              |
+| `dotenv` ^17.0                  | Env loading                                                                                                        |                                                           |
+| `cors` ^2.8                     | Dashboard CORS                                                                                                     | Lock to frontend origin                                   |
 
 ### 2.2 Frontend
 
-| Package | Purpose |
-|---|---|
-| `react` ^19.1 + `react-dom` ^19.1 | UI (current stable major) |
-| `vite` ^7.1 | Dev server / build |
-| `react-router-dom` ^7.6 | Routing |
-| `@tanstack/react-query` ^5.74 | Server state (events, deliveries, endpoints) |
-| `axios` ^1.12 | API client (interceptors: auth header, request-id) |
-| `tailwindcss` ^4.1 + `@tailwindcss/vite` ^4.1 | Styling (CSS-first config) |
-| `lucide-react` ^0.525 | Icons |
+| Package                                       | Purpose                                            |
+| --------------------------------------------- | -------------------------------------------------- |
+| `react` ^19.1 + `react-dom` ^19.1             | UI (current stable major)                          |
+| `vite` ^7.1                                   | Dev server / build                                 |
+| `react-router-dom` ^7.6                       | Routing                                            |
+| `@tanstack/react-query` ^5.74                 | Server state (events, deliveries, endpoints)       |
+| `axios` ^1.12                                 | API client (interceptors: auth header, request-id) |
+| `tailwindcss` ^4.1 + `@tailwindcss/vite` ^4.1 | Styling (CSS-first config)                         |
+| `lucide-react` ^0.525                         | Icons                                              |
 
 ### 2.3 Testing / Tooling
 
@@ -179,7 +179,7 @@ Developers register webhook endpoints + subscribe them to event types. Producers
 
 ### 3.2 Key Architecture Decisions
 
-- **No Redis as system of record.** If Redis is wiped, unpublished outbox rows drain automatically; *published* rows are lost — those deliveries are recovered only via the explicit recovery command (§6.4).
+- **No Redis as system of record.** If Redis is wiped, unpublished outbox rows drain automatically; _published_ rows are lost — those deliveries are recovered only via the explicit recovery command (§6.4).
 - **PostgreSQL `available_at` is the sole retry scheduler.** BullMQ jobs are always immediate (`delay: 0`); the dispatcher publishes a row only when `available_at <= NOW()`. There is exactly one scheduling mechanism, so no ambiguity between DB due-time and queue delay.
 - **No DB transaction held across HTTP calls.** Short claim TX → HTTP outside TX → short finalize TX (guarded by `lock_token`).
 - **Stateless API** → horizontal scale behind any load balancer; sticky sessions not required.
@@ -201,25 +201,30 @@ Foreign keys on history-bearing tables use `ON DELETE RESTRICT` (never `CASCADE`
 **`users`** — `id UUID PK, name TEXT NOT NULL, email CITEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, created_at, updated_at`
 
 **`api_keys`** — `id UUID PK, user_id FK→users ON DELETE CASCADE, name TEXT, key_prefix TEXT NOT NULL, key_hash TEXT NOT NULL, last_used_at, expires_at, created_at, revoked_at`
+
 - Raw key format: `er_live_<22-char random base64url>` (~132 bits entropy). `key_prefix` = the **first 16 characters of the full raw key** (`er_live_XXXXXXXX`, including the `er_live_` marker and 8 random chars) — meaningful, display-safe, and unique. `UNIQUE(key_prefix)` — lookup finds at most one row; collisions regenerate the key (astronomically unlikely but retried on 23505).
 - `key_hash` = `SHA-256(raw key)` hex. API keys are high-entropy (not human passwords), so a fast deterministic hash is correct and avoids a `bcrypt.compare` per ingestion request. Compare with `crypto.timingSafeEqual` on the digests (§10).
 - Raw key shown **once** at creation.
 
 **`endpoints`** — `id UUID PK, user_id FK→users ON DELETE CASCADE, name TEXT, url TEXT NOT NULL, signing_secret_encrypted TEXT NOT NULL, is_active BOOL DEFAULT TRUE, deleted_at TIMESTAMPTZ, timeout_ms INT DEFAULT 10000 CHECK (timeout_ms BETWEEN 1000 AND 30000), max_attempts INT DEFAULT 6 CHECK (max_attempts BETWEEN 1 AND 20), created_at, updated_at`
+
 - **Soft delete:** `DELETE /endpoints/:id` sets `deleted_at = NOW(), is_active = false`. The row is **never** hard-deleted when deliveries reference it — `deliveries.endpoint_id` FK is `ON DELETE RESTRICT`. List queries filter `deleted_at IS NULL`; delivery-history joins still resolve the endpoint. Fan-out (§5) only matches `is_active AND deleted_at IS NULL`.
 - `signing_secret_encrypted`: AES-256-GCM ciphertext (`iv:authTag:ciphertext`, base64) using `ENCRYPTION_KEY` (32 bytes, base64) from env. **Never** returned by list/get APIs.
 - Endpoint URL validity is enforced by SSRF-aware validation (§10.1), not string format alone.
 
 **`endpoint_event_types`** — `id UUID PK, endpoint_id FK→endpoints ON DELETE CASCADE, event_type TEXT NOT NULL, UNIQUE(endpoint_id, event_type)`
+
 - Defines subscriptions. Endpoint edit = replace set in one TX. Cascade here is safe: subscriptions are config, not history.
 
 **`events`** — `id UUID PK, user_id FK→users ON DELETE RESTRICT, idempotency_key TEXT, event_type TEXT NOT NULL, payload JSONB NOT NULL, created_at`
+
 - `UNIQUE(user_id, idempotency_key) WHERE idempotency_key IS NOT NULL` (partial unique index).
 - Payload size guard (≤ 256 KB serialized) enforced in validation.
 
 **`deliveries`** — `id UUID PK, event_id FK→events ON DELETE RESTRICT, endpoint_id FK→endpoints ON DELETE RESTRICT, status TEXT CHECK IN ('pending','processing','retrying','succeeded','failed'), attempt_count INT DEFAULT 0, total_attempt_count INT DEFAULT 0, replay_count INT DEFAULT 0, next_attempt_at TIMESTAMPTZ, locked_until TIMESTAMPTZ, lock_token TEXT, last_response_status INT, last_error TEXT, created_at, updated_at, succeeded_at, dead_lettered_at`
 
 Counter semantics (consistent everywhere — §7.1, §8.4):
+
 - `attempt_count` = attempts **started in the current cycle**. Reset to `0` on replay; incremented **inside the claim TX** when an attempt starts.
 - `total_attempt_count` = lifetime attempts started across all cycles. **Never reset**, including on replay.
 - `replay_count` = number of successful manual replays; current cycle number = `replay_count + 1`.
@@ -232,22 +237,23 @@ Counter semantics (consistent everywhere — §7.1, §8.4):
 
 Attempt state machine (see §7.1 for full lifecycle):
 
-| Status | Meaning | `completed_at` |
-|---|---|---|
-| `in_progress` | Worker claimed the delivery and started this attempt; HTTP in flight or not yet finalized | NULL |
-| `succeeded` | Receiver returned 2xx | set |
-| `retryable_failure` | Network error / timeout / 408 / 425 / 429 / 5xx — retry scheduled | set |
-| `terminal_failure` | Other 4xx / inactive endpoint / non-retryable config error | set |
-| `worker_lost` | Lease expired before finalize (worker crashed or is a stale worker); written by sweeper | set |
+| Status              | Meaning                                                                                   | `completed_at` |
+| ------------------- | ----------------------------------------------------------------------------------------- | -------------- |
+| `in_progress`       | Worker claimed the delivery and started this attempt; HTTP in flight or not yet finalized | NULL           |
+| `succeeded`         | Receiver returned 2xx                                                                     | set            |
+| `retryable_failure` | Network error / timeout / 408 / 425 / 429 / 5xx — retry scheduled                         | set            |
+| `terminal_failure`  | Other 4xx / inactive endpoint / non-retryable config error                                | set            |
+| `worker_lost`       | Lease expired before finalize (worker crashed or is a stale worker); written by sweeper   | set            |
 
 - **Immutability:** an attempt row may only be updated while `status = 'in_progress'`; every finalize/finalize-as-lost `UPDATE` includes `WHERE status = 'in_progress'`. Once finalized, rows are append-only history. (Enforce in application code + a migration comment; a DB trigger rejecting updates to finalized rows is an optional hardening — M5.)
 - Cap stored `response_body` (first 8 KB); truncated responses are noted in `error_message`. Response reading is bounded (§10.1).
 - `request_timestamp` = timestamp sent in the signing header; `started_at` ≈ claim time.
 
 **`outbox_messages`** — `id UUID PK, message_type TEXT NOT NULL CHECK IN ('delivery.created','delivery.retry','delivery.replay','delivery.recovery'), aggregate_id UUID NOT NULL (delivery id), available_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), published_at TIMESTAMPTZ, attempts INT NOT NULL DEFAULT 0, lock_token TEXT, locked_until TIMESTAMPTZ, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+
 - `published_at` means **BullMQ accepted the job** (broker enqueue succeeded). It does **not** mean the webhook was delivered. A delivery can be `succeeded` while an older outbox row is (rarely) still unpublished, and vice versa.
 - `lock_token` + `locked_until`: publisher lease, same pattern as deliveries — guards against stale dispatchers (§6.2).
-- One row per enqueue intent. Initial delivery, each retry, each replay, and each recovery republish each create a **new** row with its own ID (and therefore its own `jobId`), apart from duplicate publication of the *same* row (§6.3).
+- One row per enqueue intent. Initial delivery, each retry, each replay, and each recovery republish each create a **new** row with its own ID (and therefore its own `jobId`), apart from duplicate publication of the _same_ row (§6.3).
 
 ### 4.3 Indexes
 
@@ -515,7 +521,7 @@ AND  endpoint.timeout_ms ≤ MAX_ENDPOINT_TIMEOUT_MS (30 s, hard cap, CHECK cons
 
 - Every delivery finalize includes `AND lock_token = $ours`. A stale worker (lease lost, sweeper or another worker claimed the delivery) **cannot** update delivery state, cannot insert a retry outbox row, and cannot mark the delivery terminal. Its only write attempt affects 0 rows.
 - Attempt imputation: the attempt UPDATE includes `AND status = 'in_progress'` — once `worker_lost`/terminal/succeeded, no stale worker can overwrite it. Finalized attempt rows are immutable history; replays append new rows with a new `cycle_number`.
-- Worker crash **after HTTP succeeded** but before finalize: the receiver *did* get the webhook; the attempt ends as `worker_lost` via the sweeper; the delivery retries and may deliver again. **External duplicate delivery remains possible** — this is intrinsic to at-least-once without receiver cooperation, and is why receivers must dedupe (§7.6).
+- Worker crash **after HTTP succeeded** but before finalize: the receiver _did_ get the webhook; the attempt ends as `worker_lost` via the sweeper; the delivery retries and may deliver again. **External duplicate delivery remains possible** — this is intrinsic to at-least-once without receiver cooperation, and is why receivers must dedupe (§7.6).
 
 ### 7.5 Signing Contract (document in README + OpenAPI)
 
@@ -546,15 +552,15 @@ next_attempt_at = available_at = NOW() + delay
 
 Defaults (configurable via env):
 
-| Param | Default |
-|---|---|
-| `MAX_ATTEMPTS` | 6 (incl. first attempt) |
-| `BASE_RETRY_DELAY_MS` | 5000 |
-| `RETRY_MULTIPLIER` | 2 |
-| `MAX_RETRY_DELAY_MS` | 3_600_000 (1 h) |
-| `DELIVERY_LEASE_MS` | 60_000 (must satisfy §7.3) |
+| Param                     | Default                    |
+| ------------------------- | -------------------------- |
+| `MAX_ATTEMPTS`            | 6 (incl. first attempt)    |
+| `BASE_RETRY_DELAY_MS`     | 5000                       |
+| `RETRY_MULTIPLIER`        | 2                          |
+| `MAX_RETRY_DELAY_MS`      | 3_600_000 (1 h)            |
+| `DELIVERY_LEASE_MS`       | 60_000 (must satisfy §7.3) |
 | `MAX_ENDPOINT_TIMEOUT_MS` | 30_000 (hard endpoint cap) |
-| `JITTER` | full jitter |
+| `JITTER`                  | full jitter                |
 
 Example schedule (pre-jitter): 1st immediate → 5 s → 10 s → 20 s → 40 s → 80 s. Jitter spreads retries so thousands of simultaneous failures don't thundering-herd the receiver.
 
@@ -620,20 +626,20 @@ TX (single statement, atomic):
 
 Base: `/v1`. Auth: `Authorization: Bearer <JWT>` (dashboard) or `X-API-Key` (ingestion/verification).
 
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| `POST` | `/auth/register`, `/auth/login` | — | JWT issuance |
-| `GET/POST` | `/api-keys` | JWT | List (no raw material) / create (raw key once) |
-| `DELETE` | `/api-keys/:id` | JWT | Revoke (set `revoked_at`) |
-| `GET/POST` | `/endpoints` | JWT | List (no secrets, no deleted) / create (SSRF-validated URL, §10.1) |
-| `GET/PUT/DELETE` | `/endpoints/:id` | JWT | Get (no secret) / update incl. subscriptions / **soft delete** (`deleted_at`, `is_active=false`) |
-| `POST` | `/endpoints/:id/rotate-secret` | JWT | New secret, shown once |
-| `POST` | `/v1/events` | API key | Ingest (see §5) |
-| `GET` | `/events`, `/events/:id` | JWT | List (filters: type, date) / detail + deliveries |
-| `GET` | `/deliveries`, `/deliveries/:id` | JWT | List (status, endpoint, event filters, pagination) / detail + attempts |
-| `POST` | `/deliveries/:id/replay` | JWT | Manual replay — **failed-only** (§8.5); 409 otherwise |
-| `GET` | `/stats/overview` | JWT | Counts by status, success rate, recent failures |
-| `GET` | `/docs` | — | Swagger UI; `/openapi.yaml` |
+| Method           | Route                            | Auth    | Description                                                                                      |
+| ---------------- | -------------------------------- | ------- | ------------------------------------------------------------------------------------------------ |
+| `POST`           | `/auth/register`, `/auth/login`  | —       | JWT issuance                                                                                     |
+| `GET/POST`       | `/api-keys`                      | JWT     | List (no raw material) / create (raw key once)                                                   |
+| `DELETE`         | `/api-keys/:id`                  | JWT     | Revoke (set `revoked_at`)                                                                        |
+| `GET/POST`       | `/endpoints`                     | JWT     | List (no secrets, no deleted) / create (SSRF-validated URL, §10.1)                               |
+| `GET/PUT/DELETE` | `/endpoints/:id`                 | JWT     | Get (no secret) / update incl. subscriptions / **soft delete** (`deleted_at`, `is_active=false`) |
+| `POST`           | `/endpoints/:id/rotate-secret`   | JWT     | New secret, shown once                                                                           |
+| `POST`           | `/v1/events`                     | API key | Ingest (see §5)                                                                                  |
+| `GET`            | `/events`, `/events/:id`         | JWT     | List (filters: type, date) / detail + deliveries                                                 |
+| `GET`            | `/deliveries`, `/deliveries/:id` | JWT     | List (status, endpoint, event filters, pagination) / detail + attempts                           |
+| `POST`           | `/deliveries/:id/replay`         | JWT     | Manual replay — **failed-only** (§8.5); 409 otherwise                                            |
+| `GET`            | `/stats/overview`                | JWT     | Counts by status, success rate, recent failures                                                  |
+| `GET`            | `/docs`                          | —       | Swagger UI; `/openapi.yaml`                                                                      |
 
 Conventions: offset pagination (`limit`+`offset`, `meta` in response), `{ error: { code, message, requestId } }` error shape, `X-Request-Id` on every response, 401/403/404/409/422/429 semantics documented in OpenAPI. All write bodies validated with Zod.
 
@@ -650,7 +656,7 @@ A URL-string check is **never** sufficient. Hostname-based attacks (DNS returnin
 1. Parse URL. Scheme: `https:` only when `NODE_ENV=production`; `http:` allowed only when `ALLOW_INSECURE_URLS=true` (dev/local) — and production always rejects `http:`.
 2. Resolve hostname via `node:dns/promises` `resolve4`/`resolve6` (or `lookup(hostname, { all: true, verbatim: true })`). **Every** returned address must pass the public-IP check; a single private/reserved address rejects the whole hostname. Use the OS resolver behavior consistently; do not skip IPv6.
 3. Public-IP check rejects: loopback (`127.0.0.0/8`, `::1`), private (`10/8`, `172.16/12`, `192.168/16`, `fc00::/7`), link-local (`169.254/16`, `fe80::/10`), multicast (`224/4`, `ff00::/8`), unspecified (`0.0.0.0`, `::`), documentation/benchmark/reserved (`192.0.2/24`, `198.51.100/24`, `203.0.113/24`, `198.18/15`, `240/4`, `::ffff:0:0/96` mapped forms, `100.64/10` CGNAT unless explicitly allowed). **IPv4-mapped IPv6** (`::ffff:127.0.0.1`) is unwrapped and checked as IPv4. Classification uses `node:net` `isIPv4/isIPv6` + an explicit range table (or `ipaddr.js`-equivalent logic implemented in `lib/ssrf.js`, unit-tested per range).
-4. **DNS rebinding (TOCTOU) defense at delivery time:** connect using a **pinned lookup** — the worker passes a custom `lookup` to `http`/`https` request (via `fetch` `dispatcher`/`agent` or raw `https.request`) that returns only the addresses validated in step 2 for *this* attempt. The validated IP set is re-resolved per attempt, so a DNS record that changes between attempts is re-checked. Optionally also set connection `servername` for SNI/Host correctness. Document that this prevents the "validated public, connected to private" split.
+4. **DNS rebinding (TOCTOU) defense at delivery time:** connect using a **pinned lookup** — the worker passes a custom `lookup` to `http`/`https` request (via `fetch` `dispatcher`/`agent` or raw `https.request`) that returns only the addresses validated in step 2 for _this_ attempt. The validated IP set is re-resolved per attempt, so a DNS record that changes between attempts is re-checked. Optionally also set connection `servername` for SNI/Host correctness. Document that this prevents the "validated public, connected to private" split.
 5. **Redirects:** `redirect: 'manual'`. Any 3xx is `terminal_failure` — the worker never follows a redirect to a possibly-private URL. Documented in §8.3.
 6. **Dev allowlist (controlled):** `ALLOW_LOCAL_ENDPOINTS=true` (never set in production; startup **refuses** to boot with `NODE_ENV=production` + `ALLOW_LOCAL_ENDPOINTS=true`) permits `localhost` / loopback / private targets for local development. Endpoint create/update and delivery-time checks both consult the same allowlist flag.
 7. **Bounded response reading:** read at most `MAX_RESPONSE_BYTES` (default 64 KB) via streaming with a hard abort when the cap is exceeded; never buffer unbounded bodies. A body over the cap is recorded truncated with `error_message` noting truncation — the HTTP status still classifies the attempt. This prevents memory exhaustion from a rogue receiver.
@@ -755,20 +761,20 @@ EventRelay/
 
 Principles: locking-, transaction-, and concurrency-sensitive behavior is tested against **real PostgreSQL and Redis** (CI services or Compose). `pg-mem`, mocked `ioredis`, and in-memory fakes are permitted only for fast unit tests — never as the sole evidence for the cases below.
 
-| Layer | Tool / Environment | What |
-|---|---|---|
-| Unit | Jest | `classifyOutcome`, backoff+jitter bounds, HMAC sign/verify, AES-GCM round-trip, SHA-256 API-key verify, Zod schemas, **SSRF IP-range table** (all ranges incl. mapped-IPv6 + boundaries), job-ID format check (no `:`) |
-| API integration | Supertest + **real Postgres** | Register/login, API-key lifecycle (prefix uniqueness, hash-only storage, one-time display), endpoint CRUD + subscriptions + **soft delete keeps history**, ingest fan-out, idempotency (same key twice → one event), auth scoping (user A can't read user B) |
-| **Concurrency (real Postgres)** | Parallel `pg` clients | Two simultaneous `POST /v1/events` with the same `Idempotency-Key` → exactly 1 event, 1 set of deliveries, 1 set of outbox rows. Two concurrent replay POSTs on one failed delivery → exactly one 202, one 409, one new cycle. Concurrent worker claims on one delivery → exactly one claim wins |
-| Outbox | Jest + **real Redis** | Redis down → outbox unpublished persists → Redis up → job enqueued exactly once (`jobId = outbox_<id>`, re-publish of same row reuses same `jobId`) |
-| **Dispatcher crash** | Redis + Postgres fault injection | Kill dispatcher between `queue.add` and mark-published → next run re-publishes same row/job ID → BullMQ holds 1 job → worker claims once; no duplicate deliveries |
-| **Worker crash after send** | Mock receiver + real Postgres | Receiver returns 2xx; worker killed before finalize → sweeper finalizes attempt as `worker_lost`, delivery retries, duplicate delivery observed + dedupe contract verified; history shows `worker_lost` then the retried attempt |
-| **Redis wipe after publish** | `FLUSHALL` on real Redis | Publish → wipe → run `scripts/recover-queue.js` → `pending`/`retrying`/expired-`processing` deliveries re-enqueued; `succeeded`/`failed` untouched; attempts/counters preserved; second run is a no-op |
-| Delivery integration | Mock receiver (local HTTP) | Worker end-to-end: 2xx success, 500 retry→success, terminal 4xx, timeout retry, redirect treated as terminal, lease-expiry recovery |
-| **Large response body** | Mock receiver streaming > 64 KB | Worker aborts reads at the cap; attempt stored truncated; memory stays bounded; classification unaffected |
-| **DNS-based SSRF** | Stub DNS (or `/etc/hosts`-style override in test env) | Endpoints resolving to `127.0.0.1`, `10.x`, `::1`, `::ffff:127.0.0.1`, or mixed public+private records → rejected at save; public IP at save → private at delivery → blocked at delivery (pinned-lookup path); allows dev allowlist only in non-production |
-| Contract | OpenAPI + manual | Signing verification snippet tested against `/dev/webhook-receiver` |
-| E2E (smoke) | Playwright or manual checklist | Dashboard login → create endpoint → ingest → see delivery succeeded |
+| Layer                           | Tool / Environment                                    | What                                                                                                                                                                                                                                                                                             |
+| ------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit                            | Jest                                                  | `classifyOutcome`, backoff+jitter bounds, HMAC sign/verify, AES-GCM round-trip, SHA-256 API-key verify, Zod schemas, **SSRF IP-range table** (all ranges incl. mapped-IPv6 + boundaries), job-ID format check (no `:`)                                                                           |
+| API integration                 | Supertest + **real Postgres**                         | Register/login, API-key lifecycle (prefix uniqueness, hash-only storage, one-time display), endpoint CRUD + subscriptions + **soft delete keeps history**, ingest fan-out, idempotency (same key twice → one event), auth scoping (user A can't read user B)                                     |
+| **Concurrency (real Postgres)** | Parallel `pg` clients                                 | Two simultaneous `POST /v1/events` with the same `Idempotency-Key` → exactly 1 event, 1 set of deliveries, 1 set of outbox rows. Two concurrent replay POSTs on one failed delivery → exactly one 202, one 409, one new cycle. Concurrent worker claims on one delivery → exactly one claim wins |
+| Outbox                          | Jest + **real Redis**                                 | Redis down → outbox unpublished persists → Redis up → job enqueued exactly once (`jobId = outbox_<id>`, re-publish of same row reuses same `jobId`)                                                                                                                                              |
+| **Dispatcher crash**            | Redis + Postgres fault injection                      | Kill dispatcher between `queue.add` and mark-published → next run re-publishes same row/job ID → BullMQ holds 1 job → worker claims once; no duplicate deliveries                                                                                                                                |
+| **Worker crash after send**     | Mock receiver + real Postgres                         | Receiver returns 2xx; worker killed before finalize → sweeper finalizes attempt as `worker_lost`, delivery retries, duplicate delivery observed + dedupe contract verified; history shows `worker_lost` then the retried attempt                                                                 |
+| **Redis wipe after publish**    | `FLUSHALL` on real Redis                              | Publish → wipe → run `scripts/recover-queue.js` → `pending`/`retrying`/expired-`processing` deliveries re-enqueued; `succeeded`/`failed` untouched; attempts/counters preserved; second run is a no-op                                                                                           |
+| Delivery integration            | Mock receiver (local HTTP)                            | Worker end-to-end: 2xx success, 500 retry→success, terminal 4xx, timeout retry, redirect treated as terminal, lease-expiry recovery                                                                                                                                                              |
+| **Large response body**         | Mock receiver streaming > 64 KB                       | Worker aborts reads at the cap; attempt stored truncated; memory stays bounded; classification unaffected                                                                                                                                                                                        |
+| **DNS-based SSRF**              | Stub DNS (or `/etc/hosts`-style override in test env) | Endpoints resolving to `127.0.0.1`, `10.x`, `::1`, `::ffff:127.0.0.1`, or mixed public+private records → rejected at save; public IP at save → private at delivery → blocked at delivery (pinned-lookup path); allows dev allowlist only in non-production                                       |
+| Contract                        | OpenAPI + manual                                      | Signing verification snippet tested against `/dev/webhook-receiver`                                                                                                                                                                                                                              |
+| E2E (smoke)                     | Playwright or manual checklist                        | Dashboard login → create endpoint → ingest → see delivery succeeded                                                                                                                                                                                                                              |
 
 - CI: GitHub Actions — `npm ci`, lint, unit, integration with ephemeral Postgres/Redis services, build client.
 - Coverage targets: classify/backoff/signing/crypto/ssrf 100%; services/routes > 80%.
@@ -787,7 +793,7 @@ Principles: locking-, transaction-, and concurrency-sensitive behavior is tested
 
 ## 16. Build Order / Milestones
 
-1. **M0 — Scaffolding:** repo layout, package.json pins (Node 24 LTS, Express 5, React 19, Vite 7), `.env.example`, Docker Compose (pg+redis), `migrate.js`, Pino + Helmet + error handling, health check. *Done when:* `docker compose up` → API `/health` 200.
+1. **M0 — Scaffolding:** repo layout, package.json pins (Node 24 LTS, Express 5, React 19, Vite 7), `.env.example`, Docker Compose (pg+redis), `migrate.js`, Pino + Helmet + error handling, health check. _Done when:_ `docker compose up` → API `/health` 200.
 2. **M1 — Auth & API keys:** users (bcrypt), JWT, api_keys CRUD (SHA-256, 16-char prefix, unique index, once-display), Zod + rate limits. Tests included.
 3. **M2 — Endpoints & subscriptions:** endpoints CRUD (soft delete, timeout cap + lease inequality), AES-GCM secret storage, subscriptions, rotate-secret, SSRF-aware URL validation (`lib/ssrf.js`, §10.1).
 4. **M3 — Ingestion + outbox schema:** migrations for events/deliveries/attempts (new state machine, §4.2)/outbox (lock_token), `POST /v1/events` single-TX fan-out + idempotency. **Real-Postgres concurrent-idempotency test.**
@@ -804,16 +810,16 @@ Each milestone ends with: tests green, README notes updated, `docker compose up`
 
 ## 17. Risks, Trade-offs & Non-Goals
 
-| Risk / Trade-off | Mitigation |
-|---|---|
-| Duplicate deliveries (at-least-once) | Documented contract (§7.6); `X-EventRelay-Delivery-Id` for receiver dedupe; idempotent worker claim |
-| Endpoint URL abuse / SSRF | DNS-based validation with pinned lookups, redirects disabled, HTTPS enforced in prod, dev allowlist gated (§10.1) |
-| Redis wipe loses published jobs | Explicit recovery command (§6.4); automated reconciliation as later enhancement |
-| Outbox polling latency | 500 ms poll acceptable for webhooks; `LISTEN/NOTIFY` as later optimization |
-| Attempt-row volume at scale | Truncate `response_body` (+ response cap); retention/archival policy (§4.5); index `(delivery_id, started_at)` |
-| `ENCRYPTION_KEY` loss | Back it up; document rotation; without it secrets are unrecoverable (by design) |
-| Lease too short for slow receivers | Hard endpoint timeout cap + enforced lease inequality (§7.3); startup validation |
-| BullMQ/Redis version drift | Pin majors; healthchecks; `maxRetriesPerRequest: null` |
+| Risk / Trade-off                     | Mitigation                                                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Duplicate deliveries (at-least-once) | Documented contract (§7.6); `X-EventRelay-Delivery-Id` for receiver dedupe; idempotent worker claim               |
+| Endpoint URL abuse / SSRF            | DNS-based validation with pinned lookups, redirects disabled, HTTPS enforced in prod, dev allowlist gated (§10.1) |
+| Redis wipe loses published jobs      | Explicit recovery command (§6.4); automated reconciliation as later enhancement                                   |
+| Outbox polling latency               | 500 ms poll acceptable for webhooks; `LISTEN/NOTIFY` as later optimization                                        |
+| Attempt-row volume at scale          | Truncate `response_body` (+ response cap); retention/archival policy (§4.5); index `(delivery_id, started_at)`    |
+| `ENCRYPTION_KEY` loss                | Back it up; document rotation; without it secrets are unrecoverable (by design)                                   |
+| Lease too short for slow receivers   | Hard endpoint timeout cap + enforced lease inequality (§7.3); startup validation                                  |
+| BullMQ/Redis version drift           | Pin majors; healthchecks; `maxRetriesPerRequest: null`                                                            |
 
 **Non-goals (v1):** exactly-once semantics, WebSockets/SSE live streams, email/SMS consumers, multi-tenant billing, visual pipeline builder, per-endpoint custom retry policies beyond `max_attempts`/`timeout_ms`, GraphQL, automatic queue reconciliation (explicit command only), replaying `succeeded` deliveries, lease renewal.
 
@@ -823,19 +829,19 @@ Each milestone ends with: tests green, README notes updated, `docker compose up`
 
 The following corrections were applied to the previously approved draft. Each change fixes a concrete correctness, reliability, or security defect — none are cosmetic.
 
-| # | Change | Why (defect in prior draft) |
-|---|---|---|
-| 1 | **Job IDs are `outbox_<outboxId>`; all `delivery:<id>` colon IDs removed.** Every enqueue intent (created/retry/replay/recovery) gets a fresh outbox row → distinct job ID; re-publish of the same row reuses the same ID. | Colons are invalid in BullMQ custom IDs. Delivery-derived IDs collided across retries/replays (second retry deduped away); the replacement guarantees "same row ⇒ same ID, different intent ⇒ different ID" and is documented as dedupe-optimization only (§6.3). |
-| 2 | **Explicit Redis-wipe recovery command** (`scripts/recover-queue.js`, §6.4) republishing `pending`/`retrying`/expired-`processing` as `delivery.recovery` outbox rows; history preserved; automated reconciliation deferred to roadmap. | Prior draft only covered *unpublished* outbox rows; jobs published then lost on wipe were unrecoverable. New command closes that gap; test added (§14). |
-| 3 | **Attempt state machine** (`in_progress`, `succeeded`, `retryable_failure`, `terminal_failure`, `worker_lost`) with `status` CHECK constraint; claim TX atomically inserts the `in_progress` attempt; update-only-while-`in_progress` immutability rule; sweeper finalizes as `worker_lost`. | Prior draft inserted `pending` attempts that violated the 3-value CHECK constraint, and left the sweeper's "record as failed" undefined. Schema, worker algorithm, and sweeper now agree exactly (§4.2, §7.1–7.2). |
-| 4 | **SSRF hardening:** DNS resolution with all-address validation, IPv4/IPv6 private/loopback/link-local/multicast/reserved rejection incl. IPv4-mapped forms, pinned lookup anti-rebinding, redirects never followed, dev-only allowlist gated off in prod, 64 KB response cap, HTTPS-only in prod (§10.1). | Prior "block private ranges" line had no mechanism: hostname strings are not addresses, check-then-connect is a TOCTOU/rebinding hole, and fetch would follow redirects into the private network. |
-| 5 | **History preservation:** `ON DELETE RESTRICT` on all history FKs; endpoint **soft delete** (`deleted_at`); retention/archival policy (§4.5). | Prior `ON DELETE CASCADE` from endpoints/events would silently destroy delivery + attempt history — the audit trail the product exists to provide. |
-| 6 | **API-key fix:** single canonical prefix (16 chars incl. `er_live_`), `UNIQUE(key_prefix)`, `SHA-256` hash + `timingSafeEqual` on ingestion path; bcrypt reserved for passwords (§4.2, §10.2). | Prior draft had two conflicting prefix lengths (8 vs 12) and paid a `bcrypt.compare` (~100 ms) on every ingestion request for a 132-bit random secret — wrong primitive, needless latency. |
-| 7 | **Dispatcher lock token + scheduling clarity:** `lock_token`/`locked_until` on outbox rows with guarded mark-published; `published_at` = broker-accepted; **Postgres `available_at` is the only scheduler; BullMQ `delay` removed entirely** (§6.2–6.3). | Prior draft could hold two scheduling mechanisms (dispatcher poll + BullMQ delayed jobs), and an ungarded mark-published let a stale dispatcher corrupt publication state after lease loss. |
-| 8 | **Enforceable lease/timeout rule:** no lease renewal; hard `timeout_ms` cap + `DELIVERY_LEASE_MS ≥ (timeout × 3) + margin` validated at startup and endpoint save (§7.3); lock-token-guarded finalize with 0-row stale-worker handling; external duplicates explicitly documented (§7.4, §7.6). | "Lease > timeout, enforce at startup" was unenforceable against per-endpoint timeouts and left stale-worker writes unspecified. The inequality + caps make it a checkable invariant. |
-| 9 | **Replay is failed-only, v1-only, and race-safe:** `WHERE status='failed'` only (removed `'succeeded'`), 0-row → 409 contract, concurrency test required (§8.5, §14). | Prior SQL allowed replaying `succeeded` deliveries despite claiming "default"; and concurrent replays could each create a "new cycle". The single-statement guard makes double-replay linearizable. |
-| 10 | **Supported versions:** Node 24 LTS (EOL 20 removed), Express 5, React 19, Vite 7, Tailwind 4 (§2). | Node 20 leaves the supported-LTS window during this project's lifetime; Express 4 / React 18 are maintained but no longer current. Compatibility verified against BullMQ 5 (Node 20+ API surface, `maxRetriesPerRequest` semantics, custom-ID charset). |
-| 11 | **Real-infrastructure tests:** actual-Postgres concurrency tests (duplicate ingestion, concurrent claims, concurrent replay), dispatcher-crash-after-add, worker-crash-after-send, Redis-wipe, DNS-SSRF, large-body cap; `pg-mem`/mocks demoted to unit subsets (§14). | Prior tests allowed `pg-mem` and mocked Redis to be the *only* evidence for locking/transaction/idempotency claims — exactly the behavior that can't be verified without a real database. |
+| #   | Change                                                                                                                                                                                                                                                                                                    | Why (defect in prior draft)                                                                                                                                                                                                                                       |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Job IDs are `outbox_<outboxId>`; all `delivery:<id>` colon IDs removed.** Every enqueue intent (created/retry/replay/recovery) gets a fresh outbox row → distinct job ID; re-publish of the same row reuses the same ID.                                                                                | Colons are invalid in BullMQ custom IDs. Delivery-derived IDs collided across retries/replays (second retry deduped away); the replacement guarantees "same row ⇒ same ID, different intent ⇒ different ID" and is documented as dedupe-optimization only (§6.3). |
+| 2   | **Explicit Redis-wipe recovery command** (`scripts/recover-queue.js`, §6.4) republishing `pending`/`retrying`/expired-`processing` as `delivery.recovery` outbox rows; history preserved; automated reconciliation deferred to roadmap.                                                                   | Prior draft only covered _unpublished_ outbox rows; jobs published then lost on wipe were unrecoverable. New command closes that gap; test added (§14).                                                                                                           |
+| 3   | **Attempt state machine** (`in_progress`, `succeeded`, `retryable_failure`, `terminal_failure`, `worker_lost`) with `status` CHECK constraint; claim TX atomically inserts the `in_progress` attempt; update-only-while-`in_progress` immutability rule; sweeper finalizes as `worker_lost`.              | Prior draft inserted `pending` attempts that violated the 3-value CHECK constraint, and left the sweeper's "record as failed" undefined. Schema, worker algorithm, and sweeper now agree exactly (§4.2, §7.1–7.2).                                                |
+| 4   | **SSRF hardening:** DNS resolution with all-address validation, IPv4/IPv6 private/loopback/link-local/multicast/reserved rejection incl. IPv4-mapped forms, pinned lookup anti-rebinding, redirects never followed, dev-only allowlist gated off in prod, 64 KB response cap, HTTPS-only in prod (§10.1). | Prior "block private ranges" line had no mechanism: hostname strings are not addresses, check-then-connect is a TOCTOU/rebinding hole, and fetch would follow redirects into the private network.                                                                 |
+| 5   | **History preservation:** `ON DELETE RESTRICT` on all history FKs; endpoint **soft delete** (`deleted_at`); retention/archival policy (§4.5).                                                                                                                                                             | Prior `ON DELETE CASCADE` from endpoints/events would silently destroy delivery + attempt history — the audit trail the product exists to provide.                                                                                                                |
+| 6   | **API-key fix:** single canonical prefix (16 chars incl. `er_live_`), `UNIQUE(key_prefix)`, `SHA-256` hash + `timingSafeEqual` on ingestion path; bcrypt reserved for passwords (§4.2, §10.2).                                                                                                            | Prior draft had two conflicting prefix lengths (8 vs 12) and paid a `bcrypt.compare` (~100 ms) on every ingestion request for a 132-bit random secret — wrong primitive, needless latency.                                                                        |
+| 7   | **Dispatcher lock token + scheduling clarity:** `lock_token`/`locked_until` on outbox rows with guarded mark-published; `published_at` = broker-accepted; **Postgres `available_at` is the only scheduler; BullMQ `delay` removed entirely** (§6.2–6.3).                                                  | Prior draft could hold two scheduling mechanisms (dispatcher poll + BullMQ delayed jobs), and an ungarded mark-published let a stale dispatcher corrupt publication state after lease loss.                                                                       |
+| 8   | **Enforceable lease/timeout rule:** no lease renewal; hard `timeout_ms` cap + `DELIVERY_LEASE_MS ≥ (timeout × 3) + margin` validated at startup and endpoint save (§7.3); lock-token-guarded finalize with 0-row stale-worker handling; external duplicates explicitly documented (§7.4, §7.6).           | "Lease > timeout, enforce at startup" was unenforceable against per-endpoint timeouts and left stale-worker writes unspecified. The inequality + caps make it a checkable invariant.                                                                              |
+| 9   | **Replay is failed-only, v1-only, and race-safe:** `WHERE status='failed'` only (removed `'succeeded'`), 0-row → 409 contract, concurrency test required (§8.5, §14).                                                                                                                                     | Prior SQL allowed replaying `succeeded` deliveries despite claiming "default"; and concurrent replays could each create a "new cycle". The single-statement guard makes double-replay linearizable.                                                               |
+| 10  | **Supported versions:** Node 24 LTS (EOL 20 removed), Express 5, React 19, Vite 7, Tailwind 4 (§2).                                                                                                                                                                                                       | Node 20 leaves the supported-LTS window during this project's lifetime; Express 4 / React 18 are maintained but no longer current. Compatibility verified against BullMQ 5 (Node 20+ API surface, `maxRetriesPerRequest` semantics, custom-ID charset).           |
+| 11  | **Real-infrastructure tests:** actual-Postgres concurrency tests (duplicate ingestion, concurrent claims, concurrent replay), dispatcher-crash-after-add, worker-crash-after-send, Redis-wipe, DNS-SSRF, large-body cap; `pg-mem`/mocks demoted to unit subsets (§14).                                    | Prior tests allowed `pg-mem` and mocked Redis to be the _only_ evidence for locking/transaction/idempotency claims — exactly the behavior that can't be verified without a real database.                                                                         |
 
 ### Consistency checklist (verified on this revision)
 
@@ -846,4 +852,4 @@ The following corrections were applied to the previously approved draft. Each ch
 
 ---
 
-*End of plan. Next step: M0 scaffolding.*
+_End of plan. Next step: M0 scaffolding._

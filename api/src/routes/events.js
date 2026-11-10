@@ -33,7 +33,9 @@ router.post('/v1/events', ingestLimiter, requireApiKey, validate(ingestSchema), 
       idempotencyKey: idempotencyKey || null,
     });
     res.status(result.deduplicated ? 200 : 202).json(result);
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Dashboard reads (JWT). All scoped to the caller's own data.
@@ -43,25 +45,27 @@ router.get('/events', requireJwt, validate(paginationSchema, 'query'), async (re
     const { type } = req.query;
     const params = [req.user.id, limit, offset];
     let where = 'WHERE user_id = $1';
-    if (type) { params.push(type); where += ` AND event_type = $${params.length}`; }
+    if (type) {
+      params.push(type);
+      where += ` AND event_type = $${params.length}`;
+    }
     const { rows } = await query(
       `SELECT id, event_type, payload, created_at FROM events ${where} ORDER BY created_at DESC LIMIT $2 OFFSET $3`,
-      params
+      params,
     );
     const countParams = type ? [req.user.id, type] : [req.user.id];
-    const { rows: total } = await query(
-      `SELECT COUNT(*)::int AS n FROM events ${where}`,
-      countParams
-    );
+    const { rows: total } = await query(`SELECT COUNT(*)::int AS n FROM events ${where}`, countParams);
     res.json({ events: rows, meta: { limit, offset, total: total[0].n } });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 });
 
 router.get('/events/:id', requireJwt, async (req, res, next) => {
   try {
     const { rows } = await query(
       'SELECT id, event_type, payload, created_at FROM events WHERE id = $1 AND user_id = $2',
-      [req.params.id, req.user.id]
+      [req.params.id, req.user.id],
     );
     if (!rows.length) return next(httpError(404, 'NOT_FOUND', 'Event not found'));
     const { rows: deliveries } = await query(
@@ -69,10 +73,12 @@ router.get('/events/:id', requireJwt, async (req, res, next) => {
               d.last_response_status, d.last_error, d.created_at, d.updated_at
        FROM deliveries d JOIN endpoints e ON e.id = d.endpoint_id
        WHERE d.event_id = $1 AND e.user_id = $2 ORDER BY d.created_at`,
-      [req.params.id, req.user.id]
+      [req.params.id, req.user.id],
     );
     res.json({ event: rows[0], deliveries });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;

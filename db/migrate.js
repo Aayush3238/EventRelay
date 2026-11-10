@@ -7,7 +7,8 @@ const { Client } = require('pg');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 async function main() {
-  const connectionString = process.env.DATABASE_URL || 'postgres://eventrelay:eventrelay@localhost:5432/eventrelay';
+  const connectionString =
+    process.env.DATABASE_URL || 'postgres://eventrelay:eventrelay@localhost:5432/eventrelay';
   const ssl = /sslmode=require/.test(connectionString) ? { rejectUnauthorized: false } : false;
   const client = new Client({ connectionString, ssl });
   await client.connect();
@@ -18,10 +19,16 @@ async function main() {
         applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )`);
     const dir = path.join(__dirname, 'migrations');
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
+    const files = fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.sql'))
+      .sort();
     for (const file of files) {
       const { rows } = await client.query('SELECT 1 FROM schema_migrations WHERE name = $1', [file]);
-      if (rows.length) { console.log(`skip  ${file}`); continue; }
+      if (rows.length) {
+        console.log(`skip  ${file}`);
+        continue;
+      }
       console.log(`apply ${file}`);
       const sql = fs.readFileSync(path.join(dir, file), 'utf8');
       await client.query('BEGIN');
@@ -40,4 +47,7 @@ async function main() {
   }
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

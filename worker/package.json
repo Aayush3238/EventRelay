@@ -9,7 +9,12 @@
     "dev": "nodemon src/worker.js",
     "test": "jest --passWithNoTests"
   },
-  "jest": { "testEnvironment": "node", "roots": ["__tests__"] },
+  "jest": {
+    "testEnvironment": "node",
+    "roots": [
+      "__tests__"
+    ]
+  },
   "dependencies": {
     "@eventrelay/shared": "*",
     "bullmq": "^5.58.0",
@@ -18,5 +23,8 @@
     "pg": "^8.13.0",
     "pino": "^9.7.0"
   },
-  "devDependencies": { "jest": "^30.0.0", "nodemon": "^3.1.0" }
+  "devDependencies": {
+    "jest": "^30.0.0",
+    "nodemon": "^3.1.0"
+  }
 }
