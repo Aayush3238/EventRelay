@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+package-lock.json
+build-log.private.md
+TESTING.md
+USER_MANUAL.md
+CODEBASE_GUIDE.md
+scripts/load-test.js
