@@ -19,7 +19,7 @@ const ingestLimiter = rateLimit({
   keyGenerator: (req) => String(req.headers['x-api-key'] || 'anon').slice(0, 64),
   message: { error: { code: 'RATE_LIMITED', message: 'Too many events' } },
 });
-
+//security check point , if even any one of these call the next(error) then our handler will not run 
 router.post('/v1/events', ingestLimiter, requireApiKey, validate(ingestSchema), async (req, res, next) => {
   try {
     const idempotencyKey = req.headers['idempotency-key'];
